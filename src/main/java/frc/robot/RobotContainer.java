@@ -32,6 +32,8 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AprilTagSubsystem;
 import frc.robot.subsystems.DrivebaseSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.ClimberSubsystem;
 
 public class RobotContainer {
   private double MaxSpeed = 4; // 6 meters per second desired top speed
@@ -42,6 +44,10 @@ public class RobotContainer {
   public final DrivebaseSubsystem drivetrain = TunerConstants.DriveTrain; // My drivetrain
   public final ShooterSubsystem shooter = new ShooterSubsystem();
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
+  public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
+  public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
+  
+
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
       .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // I want field-centric
