@@ -1,17 +1,15 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.ClimberSubsystem;
 
 public class ButtonBoardSubsystem extends SubsystemBase {
+    private ClimberSubsystem climberSubsystem;
 
     private ElevatorSubsystem elevatorSubsystem;
 
@@ -28,10 +26,20 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem(ElevatorSubsystem elevatorSubsystem) {
+    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ElevatorSubsystem elevatorSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
+        this.climberSubsystem = climberSubsystem;
         this.elevatorSubsystem = elevatorSubsystem;
+
+    }
+    private JoystickButton raiseClimberButton() {
+        return new JoystickButton(m_joystick1, 3);
+    }
+
+    private JoystickButton lowerClimberButton() {
+        return new JoystickButton(m_joystick1, 4);
+
     }
 
     // Joystick #1 Buttons
@@ -134,6 +142,30 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         lowerElevatorButton().onFalse(
             new InstantCommand(() -> elevatorSubsystem.stopMotor())
         );
+        raiseClimberButton().onTrue(
+            new InstantCommand(() -> {
+                climberSubsystem.raiseMotors();
+            })
+        );
+
+        raiseClimberButton().onFalse(
+            new InstantCommand(() -> {
+                climberSubsystem.stopMotors();
+            })
+        );
+
+        lowerClimberButton().onTrue(
+            new InstantCommand(() -> {
+                climberSubsystem.lowerMotors();
+            })
+        );
+
+        lowerClimberButton().onFalse(
+            new InstantCommand(() -> {
+                climberSubsystem.stopMotors();
+            })
+        );  
+
 
     }
 }

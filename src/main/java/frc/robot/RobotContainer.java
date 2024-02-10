@@ -47,7 +47,7 @@ public class RobotContainer {
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
   public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(elevatorSubsystem);
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem);
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
