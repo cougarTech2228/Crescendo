@@ -9,8 +9,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.ElevatorSubsystem;
 
 public class ButtonBoardSubsystem extends SubsystemBase {
+
+    private ElevatorSubsystem elevatorSubsystem;
 
     private enum ButtonBoardOperationMode {
         Fine,
@@ -25,20 +28,21 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem() {
+    public ButtonBoardSubsystem(ElevatorSubsystem elevatorSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
+        this.elevatorSubsystem = elevatorSubsystem;
     }
 
     // Joystick #1 Buttons
 
-    // private JoystickButton getArmShelfButton() {
-    //     return new JoystickButton(m_joystick1, 1);
-    // }
+    private JoystickButton raiseElevatorButton() {
+        return new JoystickButton(m_joystick1, 1);
+    }
 
-    // private JoystickButton getArmTransitButton() {
-    //     return new JoystickButton(m_joystick1, 2);
-    // }
+    private JoystickButton lowerElevatorButton() {
+        return new JoystickButton(m_joystick1, 2);
+    }
 
     // private JoystickButton getArmHomeButton() {
     //     return new JoystickButton(m_joystick1, 3);
@@ -115,6 +119,21 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     }
 
     public void configureButtonBindings() {
+        raiseElevatorButton().onTrue(
+            new InstantCommand(() -> elevatorSubsystem.lowerElevator())
+        );
+
+        raiseElevatorButton().onFalse(
+            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+        );
+        
+        lowerElevatorButton().onTrue(
+            new InstantCommand(() -> elevatorSubsystem.raiseElevator())
+        );
+
+        lowerElevatorButton().onFalse(
+            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+        );
 
     }
 }

@@ -47,7 +47,7 @@ public class RobotContainer {
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
   public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem();
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(elevatorSubsystem);
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -142,6 +142,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("shootSpeaker", shootCommand);
     NamedCommands.registerCommand("loadNote", loadNote);
     configureBindings();
+    buttonBoardSubsystem.configureButtonBindings();
     
     autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
     SmartDashboard.putData("Auto Mode", autoChooser);
