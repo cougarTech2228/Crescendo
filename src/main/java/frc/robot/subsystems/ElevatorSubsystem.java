@@ -18,7 +18,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     enum State {
         STOPPED,
         RAISING,
-        LOWERING
+        LOWERING,
     }
     private State currentState = State.STOPPED;
     

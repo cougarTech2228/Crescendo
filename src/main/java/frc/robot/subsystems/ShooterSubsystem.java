@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.TalonSRXSimCollection;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkPIDController;
@@ -19,8 +19,23 @@ import frc.robot.generated.TunerConstants;
 
 public class ShooterSubsystem extends SubsystemBase {
 
-    private TalonSRX mShooterFeedMotor;
-    private TalonSRX mShooterFlywheelMotor;
+    enum ShooterSubsystemState {
+        EMPTY,
+        LOADING_GROUND,
+        LOADING_MIDDLE,
+        LOADING_TOP,
+        MAKE_BENDER_OPEN,
+        SHOOT_BENDER,
+        LOADED,
+        SHOOTING_SPEAKER_PHASEONE,
+        SHOOTING_SPEAKER_PHASETWO,
+        PREPARING_AMP_PHASEONE,
+        PREPARING_AMP_PHASETWO,
+        FIRE_AMP,
+
+    }
+    private TalonFX mShooterFeedMotor;
+    private TalonFX mShooterFlywheelMotor;
     private DigitalInput mGroundFeedSensor;
     private DigitalInput mMiddleFeedSensor;
     private DigitalInput mTopFeedSensor;
@@ -28,8 +43,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private CANSparkMax mGroundFeedMotor;
     private CANSparkMax mBenderTiltMotor;
     private CANSparkMax mShooterBeltMotor;
-    private TalonSRX mLinearActuatorLeftMotor;
-    private TalonSRX mLinearActuatorRightMotor;
+    private TalonFX mLinearActuatorLeftMotor;
+    private TalonFX mLinearActuatorRightMotor;
 
     // private CANSparkMax mBenderMotor;
     // private RelativeEncoder mBenderEncoder;
@@ -39,10 +54,12 @@ public class ShooterSubsystem extends SubsystemBase {
     // private final static double BENDER_I = 0.0;
     // private final static double BENDER_D = 0.0;
 
-    private final static double LOAD_SPEED = -0.4;
+    private final static double LOAD_SPEED = -0.2;
+    private final static double POSITIVE_LOAD_SPEED = 0.2;
+
     public ShooterSubsystem() {
-        mShooterFeedMotor = new TalonSRX(Constants.kShooterFeedMotorId);
-        mShooterFlywheelMotor = new TalonSRX(Constants.kShooterFlywheelMotorId);
+        mShooterFeedMotor = new TalonFX(Constants.kShooterFeedMotorId);
+        mShooterFlywheelMotor = new TalonFX(Constants.kShooterFlywheelMotorId);
         mGroundFeedSensor = new DigitalInput(Constants.kGroundFeedSensorId);
         mMiddleFeedSensor = new DigitalInput(Constants.kMiddleFeedSensorId);
         mTopFeedSensor = new DigitalInput(Constants.kTopFeedSensorId);
@@ -50,8 +67,10 @@ public class ShooterSubsystem extends SubsystemBase {
         mGroundFeedMotor = new CANSparkMax(Constants.kGroundFeedMotorId, MotorType.kBrushless);
         mBenderTiltMotor = new CANSparkMax(Constants.kBenderTiltMotorId, MotorType.kBrushless);
         mShooterBeltMotor = new CANSparkMax(Constants.kShooterBeltMotorId, MotorType.kBrushless);
-        mLinearActuatorLeftMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
-        mLinearActuatorRightMotor = new TalonSRX(Constants.kLinearActuatorRightMotorId);
+        mLinearActuatorLeftMotor = new TalonFX(Constants.kLinearActuatorLeftMotorId);
+        mLinearActuatorRightMotor = new TalonFX(Constants.kLinearActuatorRightMotorId);
+
+        mLinearActuatorLeftMotor.setControl(new Follower(Constants.kLinearActuatorRightMotorId, false));
         // mBenderMotor = new CANSparkMax(Constants.kBenderMotorId, MotorType.kBrushless);
         // mBenderEncoder = mBenderMotor.getAlternateEncoder(Type.kQuadrature, 8192); // REV Through-bore encoder is 8192 counts/rev
         // mBenderPidController = mBenderMotor.getPIDController();
@@ -93,25 +112,48 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void test() {
-        mShooterFlywheelMotor.set(ControlMode.PercentOutput, 1);
-        mShooterFeedMotor.set(ControlMode.PercentOutput, 1);
+        mShooterFlywheelMotor.set(1);
+        mShooterFeedMotor.set(1);
     }
 
     public void startFlywheel() {
-        mShooterFlywheelMotor.set(ControlMode.PercentOutput, 1);
+        mShooterFlywheelMotor.set(1);
     }
 
     public void feedNote() {
-        mShooterFeedMotor.set(ControlMode.PercentOutput, 1);
+        mShooterFeedMotor.set(1);
     }
 
-    public void stopMotors() {
-        mShooterFeedMotor.set(ControlMode.PercentOutput, 0);
-        mShooterFlywheelMotor.set(ControlMode.PercentOutput, 0);
+    public void stopFeedShootMotors() {
+        mShooterFeedMotor.set(0);
+        mShooterFlywheelMotor.set(0);
+        mGroundFeedMotor.set(0);
+        mShooterBeltMotor.set(0);
+        mBenderTiltMotor.set(0);
+    }
+
+    public void stopBottomMotor() {
+        mGroundFeedMotor.set(0);
+    }
+
+    public void stopLinearActuator() {
+        mLinearActuatorRightMotor.set(0);
     }
 
     public void loadNote() {
-        mShooterFeedMotor.set(ControlMode.PercentOutput, LOAD_SPEED);
-        mShooterFlywheelMotor.set(ControlMode.PercentOutput, LOAD_SPEED);
+        mShooterFeedMotor.set(LOAD_SPEED);
+        mShooterFlywheelMotor.set(LOAD_SPEED);
+    }
+
+    public void loadNoteBottom() {
+        // Loads a note that is at the bottom of the bot
+        mGroundFeedMotor.set(POSITIVE_LOAD_SPEED);
+    }
+
+    public void startMiddleMotors() {
+        // Loads a note that is in the middle of the bot
+        mShooterBeltMotor.set(LOAD_SPEED);
+        mShooterFeedMotor.set(POSITIVE_LOAD_SPEED);
+        mShooterFlywheelMotor.set(POSITIVE_LOAD_SPEED);
     }
 };

@@ -7,11 +7,13 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 
 public class ButtonBoardSubsystem extends SubsystemBase {
     private ClimberSubsystem climberSubsystem;
 
     private ElevatorSubsystem elevatorSubsystem;
+    private ShooterSubsystem shooterSubsystem;
 
     private enum ButtonBoardOperationMode {
         Fine,
@@ -26,12 +28,12 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ElevatorSubsystem elevatorSubsystem) {
+    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ElevatorSubsystem elevatorSubsystem, ShooterSubsystem shooterSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
         this.climberSubsystem = climberSubsystem;
         this.elevatorSubsystem = elevatorSubsystem;
-
+        this.shooterSubsystem = shooterSubsystem;
     }
     private JoystickButton raiseClimberButton() {
         return new JoystickButton(m_joystick1, 3);
@@ -60,13 +62,13 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     //     return new JoystickButton(m_joystick1, 4);
     // }
 
-    // private JoystickButton getConeFloorButton() {
-    //     return new JoystickButton(m_joystick1, 5);
-    // }
+    private JoystickButton loadBottomButton() {
+        return new JoystickButton(m_joystick1, 5);
+    }
 
-    // private JoystickButton getArmMiddleButton() {
-    //     return new JoystickButton(m_joystick1, 6);
-    // }
+    private JoystickButton middleFeedButton() {
+        return new JoystickButton(m_joystick1, 6);
+    }
 
     // private JoystickButton getPickUpCubeButton() {
     //     return new JoystickButton(m_joystick1, 7);
@@ -166,6 +168,22 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })
         );  
 
+
+        loadBottomButton().onTrue(
+            new InstantCommand(() -> shooterSubsystem.loadNoteBottom())
+        );
+
+        loadBottomButton().onFalse(
+            new InstantCommand(() -> shooterSubsystem.stopBottomMotor())
+        );
+
+        middleFeedButton().onTrue(
+            new InstantCommand(() -> shooterSubsystem.startMiddleMotors())
+        );
+
+        middleFeedButton().onFalse(
+            new InstantCommand(() -> shooterSubsystem.stopFeedShootMotors())
+        );
 
     }
 }

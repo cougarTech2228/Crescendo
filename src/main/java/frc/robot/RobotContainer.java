@@ -43,11 +43,11 @@ public class RobotContainer {
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final CommandXboxController joystick = new CommandXboxController(0); // My joystick
   public final DrivebaseSubsystem drivetrain = TunerConstants.DriveTrain; // My drivetrain
-  public final ShooterSubsystem shooter = new ShooterSubsystem();
+  public final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
   public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem);
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem, shooterSubsystem);
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -63,14 +63,14 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
 
   Command shootCommand = new SequentialCommandGroup(
-      new InstantCommand(() -> shooter.startFlywheel()),
+      new InstantCommand(() -> shooterSubsystem.startFlywheel()),
       new WaitCommand(1),
-      new InstantCommand(() -> shooter.feedNote()),
+      new InstantCommand(() -> shooterSubsystem.feedNote()),
       new WaitCommand(1),
-      new InstantCommand(() -> shooter.stopMotors())
+      new InstantCommand(() -> shooterSubsystem.stopFeedShootMotors())
     );
   Command loadNote = new SequentialCommandGroup(
-      new InstantCommand(() -> shooter.loadNote()),
+      new InstantCommand(() -> shooterSubsystem.loadNote()),
       new WaitCommand(1)
     );
 
@@ -102,8 +102,8 @@ public class RobotContainer {
 
     joystick.y().onTrue(shootCommand);
 
-    joystick.x().onTrue(new InstantCommand(() -> shooter.loadNote()));
-    joystick.x().onFalse(new InstantCommand(() -> shooter.stopMotors()));
+    joystick.x().onTrue(new InstantCommand(() -> shooterSubsystem.loadNote()));
+    joystick.x().onFalse(new InstantCommand(() -> shooterSubsystem.stopFeedShootMotors()));
   
     joystick.rightBumper().onTrue(new InstantCommand(() -> {
       var ampPose = aprilTagSubsystem.getAmpPose();
