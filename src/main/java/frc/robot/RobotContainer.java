@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.AprilTagSubsystem;
+import frc.robot.subsystems.ButtonBoardSubsystem;
 import frc.robot.subsystems.DrivebaseSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -46,6 +47,7 @@ public class RobotContainer {
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
   public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem();
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
