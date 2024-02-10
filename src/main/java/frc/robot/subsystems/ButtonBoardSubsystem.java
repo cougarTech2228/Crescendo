@@ -16,6 +16,8 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         Fine,
         Coarse
     }
+    private ShooterSubsystem m_shooterSubsystem;
+
 
     private final int kJoystickChannel1 = 1;
     private final int kJoystickChannel2 = 2;
@@ -25,9 +27,11 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem() {
+    public ButtonBoardSubsystem(ShooterSubsystem shooterSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
+
+        m_shooterSubsystem = shooterSubsystem;
     }
 
     // Joystick #1 Buttons
@@ -48,11 +52,11 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     //     return new JoystickButton(m_joystick1, 4);
     // }
 
-    // private JoystickButton getConeFloorButton() {
+    // private JoystickButton getStopAllShooterMotorsButton() {
     //     return new JoystickButton(m_joystick1, 5);
     // }
 
-    // private JoystickButton getArmMiddleButton() {
+    // private JoystickButton getFeedTestButton() {
     //     return new JoystickButton(m_joystick1, 6);
     // }
 
@@ -116,5 +120,10 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     public void configureButtonBindings() {
 
+        // getStopAllShooterMotorsButton().onTrue(
+        //     new InstantCommand(() -> {
+        //         m_shooterSubsystem.stopAllShooterMotors();
+        //     })
+        // );
     }
 }
