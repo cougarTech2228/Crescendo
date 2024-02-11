@@ -47,7 +47,7 @@ public class RobotContainer {
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
   public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem);
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem, shooter);
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -62,17 +62,25 @@ public class RobotContainer {
   private final Telemetry logger = new Telemetry(MaxSpeed);
   private final SendableChooser<Command> autoChooser;
 
-  Command shootCommand = new SequentialCommandGroup(
-      new InstantCommand(() -> shooter.startFlywheel()),
-      new WaitCommand(1),
-      new InstantCommand(() -> shooter.feedNote()),
-      new WaitCommand(1),
-      new InstantCommand(() -> shooter.stopMotors())
-    );
-  Command loadNote = new SequentialCommandGroup(
-      new InstantCommand(() -> shooter.loadNote()),
-      new WaitCommand(1)
-    );
+  // Command shootCommand = new SequentialCommandGroup(
+  //     new InstantCommand(() -> shooter.startFlywheel()),
+  //     new WaitCommand(1),
+  //     new InstantCommand(() -> shooter.feedNote()),
+  //     new WaitCommand(1),
+  //     new InstantCommand(() -> shooter.stopMotors())
+  //   );
+  // Command loadNote = new SequentialCommandGroup(
+  //     new InstantCommand(() -> shooter.loadNote()),
+  //     new WaitCommand(1)
+  //   );
+
+  public void autonomousInit() {
+    shooter.initStateMachine(true);
+  }
+
+  public void teleopInit() {
+    shooter.initStateMachine(shooter.isHoldingNote());
+  }
 
   private int invertForColor() {
     var alliance = DriverStation.getAlliance();
@@ -100,10 +108,10 @@ public class RobotContainer {
        drivetrain.seedFieldRelative(rotatedPose);
     }));
 
-    joystick.y().onTrue(shootCommand);
+    // joystick.y().onTrue(shootCommand);
 
-    joystick.x().onTrue(new InstantCommand(() -> shooter.loadNote()));
-    joystick.x().onFalse(new InstantCommand(() -> shooter.stopMotors()));
+    // joystick.x().onTrue(new InstantCommand(() -> shooter.loadNote()));
+    // joystick.x().onFalse(new InstantCommand(() -> shooter.stopMotors()));
   
     joystick.rightBumper().onTrue(new InstantCommand(() -> {
       var ampPose = aprilTagSubsystem.getAmpPose();
@@ -139,8 +147,8 @@ public class RobotContainer {
   }
 
   public RobotContainer() {
-    NamedCommands.registerCommand("shootSpeaker", shootCommand);
-    NamedCommands.registerCommand("loadNote", loadNote);
+    // NamedCommands.registerCommand("shootSpeaker", shootCommand);
+    // NamedCommands.registerCommand("loadNote", loadNote);
     configureBindings();
     buttonBoardSubsystem.configureButtonBindings();
     
