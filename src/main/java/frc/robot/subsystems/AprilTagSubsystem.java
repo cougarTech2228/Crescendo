@@ -28,7 +28,7 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     private static final double reprojectionErrorThresholdLow = 1.8;
     private static final double reprojectionErrorThresholdHigh = 5.0;
-    Transform2d cameraOffsetTransform = new Transform2d(-0.41, 0.0, Rotation2d.fromDegrees(180));
+    Transform2d cameraOffsetTransform = new Transform2d(-0.64, -0.1, Rotation2d.fromDegrees(180));
 
     private static final int RED_AMP_TAG_ID = 5;
     private static final int BLUE_AMP_TAG_ID = 6;
@@ -38,7 +38,7 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     public AprilTagSubsystem(DrivebaseSubsystem drivebaseSubsystem){
         this.drivebaseSubsystem = drivebaseSubsystem;
-        camera = new PhotonCamera("Arducam_OV9281_USB_Camera");
+        camera = new PhotonCamera("AprilTagCamera");
         
         try {
             aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);

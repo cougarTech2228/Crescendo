@@ -1,16 +1,17 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.ClimberSubsystem;
 
 public class ButtonBoardSubsystem extends SubsystemBase {
+    private ClimberSubsystem climberSubsystem;
+
+    private ElevatorSubsystem elevatorSubsystem;
 
     private enum ButtonBoardOperationMode {
         Fine,
@@ -27,22 +28,32 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem(ShooterSubsystem shooterSubsystem) {
+    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ElevatorSubsystem elevatorSubsystem, ShooterSubsystem shooterSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
-
+        this.climberSubsystem = climberSubsystem;
+        this.elevatorSubsystem = elevatorSubsystem;
         m_shooterSubsystem = shooterSubsystem;
+
+    }
+    private JoystickButton raiseClimberButton() {
+        return new JoystickButton(m_joystick1, 3);
+    }
+
+    private JoystickButton lowerClimberButton() {
+        return new JoystickButton(m_joystick1, 4);
+
     }
 
     // Joystick #1 Buttons
 
-    // private JoystickButton getArmShelfButton() {
-    //     return new JoystickButton(m_joystick1, 1);
-    // }
+    private JoystickButton raiseElevatorButton() {
+        return new JoystickButton(m_joystick1, 1);
+    }
 
-    // private JoystickButton getArmTransitButton() {
-    //     return new JoystickButton(m_joystick1, 2);
-    // }
+    private JoystickButton lowerElevatorButton() {
+        return new JoystickButton(m_joystick1, 2);
+    }
 
     // private JoystickButton getArmHomeButton() {
     //     return new JoystickButton(m_joystick1, 3);
@@ -119,6 +130,45 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     }
 
     public void configureButtonBindings() {
+        raiseElevatorButton().onTrue(
+            new InstantCommand(() -> elevatorSubsystem.lowerElevator())
+        );
+
+        raiseElevatorButton().onFalse(
+            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+        );
+        
+        lowerElevatorButton().onTrue(
+            new InstantCommand(() -> elevatorSubsystem.raiseElevator())
+        );
+
+        lowerElevatorButton().onFalse(
+            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+        );
+        raiseClimberButton().onTrue(
+            new InstantCommand(() -> {
+                climberSubsystem.raiseMotors();
+            })
+        );
+
+        raiseClimberButton().onFalse(
+            new InstantCommand(() -> {
+                climberSubsystem.stopMotors();
+            })
+        );
+
+        lowerClimberButton().onTrue(
+            new InstantCommand(() -> {
+                climberSubsystem.lowerMotors();
+            })
+        );
+
+        lowerClimberButton().onFalse(
+            new InstantCommand(() -> {
+                climberSubsystem.stopMotors();
+            })
+        );  
+
 
         // getStopAllShooterMotorsButton().onTrue(
         //     new InstantCommand(() -> {
