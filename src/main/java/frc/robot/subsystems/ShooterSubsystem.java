@@ -57,6 +57,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private final static double LOAD_SPEED_GROUND = 1;
     private final static double LOAD_SPEED_BELT = -0.2;
+    private final static double LOAD_SPEED_SHOOTER_FEED = 0.1;
     private final static double SHOOTER_DELAY = 0.5;
     private final static double SPEAKER_SHOOT_SPEED = 1.0;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
@@ -142,6 +143,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 }
                 break;
             case LOADED:
+                stopAllShooterMotors();
                 break;
             case FIRE1:
                 mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
@@ -249,10 +251,11 @@ public class ShooterSubsystem extends SubsystemBase {
     public void acquiringBottom() {
         mGroundFeedMotor.set(LOAD_SPEED_GROUND);
         mShooterBeltMotor.set(LOAD_SPEED_BELT);
+        mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
 
         // FIXME: remove this
-        mShooterFeedMotor.set(0.1);
-        mShooterFlywheelMotor.set(1);
+        // mShooterFeedMotor.set(0.1);
+        // mShooterFlywheelMotor.set(1);
     }
     public void launchSpeaker() {
         mShooterFeedMotor.set(SPEAKER_SHOOT_SPEED);
