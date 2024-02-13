@@ -35,7 +35,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         m_joystick2 = new Joystick(kJoystickChannel2);
         this.climberSubsystem = climberSubsystem;
         this.elevatorSubsystem = elevatorSubsystem;
-        m_shooterSubsystem = shooterSubsystem;
+        this.shooterSubsystem = shooterSubsystem;
 
     }
     private JoystickButton raiseClimberButton() {
@@ -72,6 +72,13 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     // private JoystickButton getFeedTestButton() {
     //     return new JoystickButton(m_joystick1, 6);
     // }
+    private JoystickButton liftLinearActuatorButton() {
+        return new JoystickButton(m_joystick1, 5);
+    }
+
+    private JoystickButton lowerLinearActuatorButton() {
+        return new JoystickButton(m_joystick1, 6);
+    }
 
     // private JoystickButton getPickUpCubeButton() {
     //     return new JoystickButton(m_joystick1, 7);
@@ -132,6 +139,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     }
 
     public void configureButtonBindings() {
+
         raiseElevatorButton().onTrue(
             new InstantCommand(() -> elevatorSubsystem.lowerElevator())
         );
@@ -147,28 +155,21 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         lowerElevatorButton().onFalse(
             new InstantCommand(() -> elevatorSubsystem.stopMotor())
         );
+
         raiseClimberButton().onTrue(
-            new InstantCommand(() -> {
-                climberSubsystem.raiseMotors();
-            })
+            new InstantCommand(() -> climberSubsystem.raiseMotors())
         );
 
         raiseClimberButton().onFalse(
-            new InstantCommand(() -> {
-                climberSubsystem.stopMotors();
-            })
+            new InstantCommand(() -> climberSubsystem.stopMotors())
         );
 
         lowerClimberButton().onTrue(
-            new InstantCommand(() -> {
-                climberSubsystem.lowerMotors();
-            })
+            new InstantCommand(() -> climberSubsystem.lowerMotors())
         );
 
         lowerClimberButton().onFalse(
-            new InstantCommand(() -> {
-                climberSubsystem.stopMotors();
-            })
+            new InstantCommand(() -> climberSubsystem.stopMotors())
         );  
 
 
@@ -177,5 +178,27 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         //         m_shooterSubsystem.stopAllShooterMotors();
         //     })
         // );
+        liftLinearActuatorButton().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("currently raising");
+                shooterSubsystem.raiseLinearActuator();
+            })
+        );
+
+        liftLinearActuatorButton().onFalse(
+            new InstantCommand(() -> shooterSubsystem.stopLinearActuator())
+        );
+
+        lowerLinearActuatorButton().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("currently lowering");
+                shooterSubsystem.lowerLinearActuator();
+            })
+        );
+
+        lowerLinearActuatorButton().onFalse(
+            new InstantCommand(() -> shooterSubsystem.stopLinearActuator())
+        );
+
     }
 }
