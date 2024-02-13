@@ -26,6 +26,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private CANSparkMax mShooterBeltMotor;
     private TalonSRX mLinearActuatorLeftMotor;
     private TalonSRX mLinearActuatorRightMotor;
+    private TalonSRX mBenderFeedMotor;
     double timeCheck;
     private enum ShooterState {
         EMPTY,
@@ -59,6 +60,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double SHOOTER_DELAY = 0.5;
     private final static double SPEAKER_SHOOT_SPEED = 1.0;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
+    private final static double BENDER_SHOOT_SPEED = 1.0;
     public ShooterSubsystem() {
         mShooterFeedMotor = new TalonFX(Constants.kShooterFeedMotorId);
         mShooterFlywheelMotor = new TalonFX(Constants.kShooterFlywheelMotorId);
@@ -143,11 +145,11 @@ public class ShooterSubsystem extends SubsystemBase {
                 break;
             case FIRE1:
                 mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
-                // // TODO: Make this if statement work
-                // if (/*current flywheel speed is suffiently fast*/) {
-                //     changeState(ShooterState.FIRE2);
-                //     timeCheck = Timer.getFPGATimestamp();
-                // }
+                // TODO: Make this if statement work
+                if (mShooterFlywheelMotor.getVelocity().getValue() >= 1.0) {
+                    changeState(ShooterState.FIRE2);
+                    timeCheck = Timer.getFPGATimestamp();
+                }
                 break;
             case FIRE2:
                 launchSpeaker();
@@ -156,19 +158,42 @@ public class ShooterSubsystem extends SubsystemBase {
                     changeState(ShooterState.EMPTY);
                 }
                 break;
-            case PREP1:
+            case PREP1: // POTENTIAL NAME: TURNONBENDERROTATION
                 // TODO: Bender rotation motor on
                 break;
-            case PREP2:
+            case PREP2: // POTENTIAL NAME: LOADTOBENDER
                 mBenderTiltMotor.set(0);
+                mBenderFeedMotor.set(ControlMode.PercentOutput, 0.05); // "slow"
+                mShooterBeltMotor.set(0.05);
+                mShooterFeedMotor.set(0.05);
+                mShooterFlywheelMotor.set(0.05);
+                if (isNoteAtTop()) {
+                    changeState(ShooterState.PREP3);
+                }
                 break;
-            case PREP3:
+            case PREP3: // POTENTIAL NAME: OUTOFLOADINGCHAMBER
+                if (!isNoteAtTop()) {
+                    changeState(ShooterState.PREP4);
+                }
                 break;
-            case PREP4:
+            case PREP4: // POTENTIAL NAME: TURNOFFLOADTOBENDER
+                mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                mShooterBeltMotor.set(0);
+                mShooterFeedMotor.set(0);
+                mShooterFlywheelMotor.set(0);
+                // TODO: Bender rotation stuff
                 break;
-            case PREP5:
+            case PREP5: // POTENTIAL NAME: STOPTILTANDWAITFORSHOOT
+                mBenderTiltMotor.set(0);
+                // If amp shooter button is pressed
+                // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
                 break;
             case BENDERSHOOT:
+                mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+                if (isShooterDelayExpired()) {
+                    m_isLoaded = false;
+                    changeState(ShooterState.EMPTY);
+                }
                 break;
         }
     }
@@ -214,6 +239,7 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFlywheelMotor.set(LOAD_SPEED);
     }*/
     public boolean isShooterDelayExpired() {
+        // Returns a boolean, where true indicates that the time between the value of timeCheck and the present time is greater than SHOOTER_DELAY
         if ((Timer.getFPGATimestamp()-timeCheck)>SHOOTER_DELAY) {
             return true;
         } else {
