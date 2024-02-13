@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkMax;
@@ -62,6 +64,18 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double SPEAKER_SHOOT_SPEED = 1.0;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
+    private final static double LINEAR_ACTUATOR_RAISE_SPEED = 0.7;
+    private final static double LINEAR_ACTUATOR_LOWER_SPEED = -0.7;
+    private final static double BENDER_RAISE_SPEED = 0.2;
+    private final static double BENDER_LOWER_SPEED = -0.2;
+    enum ActuatorState {
+            RAISING,
+            LOWERING,
+            STOPPED,
+        }
+    private ActuatorState currentActuatorState = ActuatorState.STOPPED;
+
+
     public ShooterSubsystem() {
         mShooterFeedMotor = new TalonFX(Constants.kShooterFeedMotorId);
         mShooterFlywheelMotor = new TalonFX(Constants.kShooterFlywheelMotorId);
@@ -74,6 +88,7 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterBeltMotor = new CANSparkMax(Constants.kShooterBeltMotorId, MotorType.kBrushless);
         mLinearActuatorLeftMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
         mLinearActuatorRightMotor = new TalonSRX(Constants.kLinearActuatorRightMotorId);
+        // mLinearActuatorLeftMotor.setControl(new Follower(Constants.kLinearActuatorRightMotorId, false));
         // mBenderMotor = new CANSparkMax(Constants.kBenderMotorId, MotorType.kBrushless);
         // mBenderEncoder = mBenderMotor.getAlternateEncoder(Type.kQuadrature, 8192); // REV Through-bore encoder is 8192 counts/rev
         // mBenderPidController = mBenderMotor.getPIDController();
@@ -112,6 +127,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
         // SmartDashboard.putNumber("Alt Encoder Velocity", mBenderEncoder.getVelocity());
         // SmartDashboard.putNumber("Applied Output", mBenderMotor.getAppliedOutput());
+        if(currentActuatorState == ActuatorState.RAISING && actuatorAtTop()) {
+            stopLinearActuator();
+        }
+        else if(currentActuatorState == ActuatorState.LOWERING && actuatorAtBottom()) {
+            stopLinearActuator();
+        }
         switch (shooterState) {
             case EMPTY:
                 stopAllShooterMotors();
@@ -218,7 +239,19 @@ public class ShooterSubsystem extends SubsystemBase {
         return !mTopFeedSensor.get();
     }
 
-    /*public void test() {
+    public boolean actuatorAtTop() {
+        // Returns a boolean, if the actuator is at max high
+        // position, returns true. 0.187241 is the highest angle
+        return(mShooterAngleEncoder.get() <= 0.21);
+    }
+
+    public boolean actuatorAtBottom() {
+        // Returns a boolean, if the actuator is at max bottom
+        // position, returns true. 0.234322 is lowest angle.
+        return(mShooterAngleEncoder.get() >= 0.222);
+    }
+
+    public void test() {
         mShooterFlywheelMotor.set(1);
         mShooterFeedMotor.set(1);
     }
@@ -231,15 +264,50 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFeedMotor.set(1);
     }
 
-    public void stopMotors() {
+    public void stopFeedShootMotors() {
         mShooterFeedMotor.set(0);
         mShooterFlywheelMotor.set(0);
+        mGroundFeedMotor.set(0);
+        mShooterBeltMotor.set(0);
+        mBenderTiltMotor.set(0);
     }
 
+    public void stopBottomMotor() {
+        mGroundFeedMotor.set(0);
+    }
+
+    public void raiseLinearActuator() {
+        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_RAISE_SPEED);
+        mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_RAISE_SPEED);
+        System.out.println("raising");
+    }
+
+    public void lowerLinearActuator() {
+        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_LOWER_SPEED);
+        mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_LOWER_SPEED);
+        System.out.println("lowering");
+    }
+
+    public void stopLinearActuator() {
+        System.out.println("stop linear actuator shooter subsystem");
+        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, 0);
+        mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, 0);
+    }
+
+    // public void raise
+    
+    // public void stopMotors() {
+    //     mShooterFeedMotor.set(0);
+    //     mShooterFlywheelMotor.set(0);
+    //     mLinearActuatorRightMotor.set(0);
+    //     System.out.println("stop");
+    // }
+
     public void loadNote() {
-        mShooterFeedMotor.set(LOAD_SPEED);
-        mShooterFlywheelMotor.set(LOAD_SPEED);
-    }*/
+        // mShooterFeedMotor.set(LOAD_SPEED);
+        // mShooterFlywheelMotor.set(LOAD_SPEED);
+    }
+
     public boolean isShooterDelayExpired() {
         // Returns a boolean, where true indicates that the time between the value of timeCheck and the present time is greater than SHOOTER_DELAY
         if ((Timer.getFPGATimestamp()-timeCheck)>SHOOTER_DELAY) {
@@ -262,13 +330,13 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterBeltMotor.set(SPEAKER_SHOOT_SPEED);
     }
     public void stopAllShooterMotors() {
-        mBenderTiltMotor.set(0);
+        // mBenderTiltMotor.set(0);
         mGroundFeedMotor.set(0);
         mShooterBeltMotor.set(0);
         mShooterFeedMotor.set(0);
         mShooterFlywheelMotor.set(0);
-        mLinearActuatorLeftMotor.set(ControlMode.PercentOutput, 0);
-        mLinearActuatorRightMotor.set(ControlMode.PercentOutput, 0);
+        // mLinearActuatorLeftMotor.set(ControlMode.PercentOutput, 0);
+        // mLinearActuatorRightMotor.set(ControlMode.PercentOutput, 0);
 
     }
 };
