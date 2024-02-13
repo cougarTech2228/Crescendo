@@ -19,6 +19,8 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         Fine,
         Coarse
     }
+    private ShooterSubsystem m_shooterSubsystem;
+
 
     private final int kJoystickChannel1 = 1;
     private final int kJoystickChannel2 = 2;
@@ -33,7 +35,8 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         m_joystick2 = new Joystick(kJoystickChannel2);
         this.climberSubsystem = climberSubsystem;
         this.elevatorSubsystem = elevatorSubsystem;
-        this.shooterSubsystem = shooterSubsystem;
+        m_shooterSubsystem = shooterSubsystem;
+
     }
     private JoystickButton raiseClimberButton() {
         return new JoystickButton(m_joystick1, 3);
@@ -62,13 +65,13 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     //     return new JoystickButton(m_joystick1, 4);
     // }
 
-    private JoystickButton loadBottomButton() {
-        return new JoystickButton(m_joystick1, 5);
-    }
+    // private JoystickButton getStopAllShooterMotorsButton() {
+    //     return new JoystickButton(m_joystick1, 5);
+    // }
 
-    private JoystickButton middleFeedButton() {
-        return new JoystickButton(m_joystick1, 6);
-    }
+    // private JoystickButton getFeedTestButton() {
+    //     return new JoystickButton(m_joystick1, 6);
+    // }
 
     // private JoystickButton getPickUpCubeButton() {
     //     return new JoystickButton(m_joystick1, 7);
@@ -169,21 +172,10 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         );  
 
 
-        loadBottomButton().onTrue(
-            new InstantCommand(() -> shooterSubsystem.loadNoteBottom())
-        );
-
-        loadBottomButton().onFalse(
-            new InstantCommand(() -> shooterSubsystem.stopBottomMotor())
-        );
-
-        middleFeedButton().onTrue(
-            new InstantCommand(() -> shooterSubsystem.startMiddleMotors())
-        );
-
-        middleFeedButton().onFalse(
-            new InstantCommand(() -> shooterSubsystem.stopFeedShootMotors())
-        );
-
+        // getStopAllShooterMotorsButton().onTrue(
+        //     new InstantCommand(() -> {
+        //         m_shooterSubsystem.stopAllShooterMotors();
+        //     })
+        // );
     }
 }
