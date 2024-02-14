@@ -50,8 +50,10 @@ public class ShooterSubsystem extends SubsystemBase {
     public enum OperatorEvent {
         NONE,
         PREP_AMP,
+        PREP_SPEAKER,
         FIRE_SPEAKER,
         FIRE_AMP,
+        SPIT
     };
     private OperatorEvent currentEvent;
 
