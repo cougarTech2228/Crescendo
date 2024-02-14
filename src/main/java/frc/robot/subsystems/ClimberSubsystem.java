@@ -25,7 +25,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
 
     public ClimberSubsystem() {
-        mClimberMotor = new TalonFX(Constants.kClimberMotorId);
+        mClimberMotor = new TalonFX(Constants.kClimberMotorId, "canivore");
         mClimberTopSensor = new DigitalInput(Constants.kClimberTopSensorId);
         mClimberBottomSensor = new DigitalInput(Constants.kClimberBottomSensorId);
         mClimberMotor.setNeutralMode(NeutralModeValue.Brake);
