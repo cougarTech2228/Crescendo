@@ -13,9 +13,11 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 
 public class ShooterSubsystem extends SubsystemBase {
 
+    private BenderAngleSubsystem mBenderAngleSubsystem = new BenderAngleSubsystem();
     private TalonFX mShooterFeedMotor;
     private TalonFX mShooterFlywheelMotor;
     private DigitalInput mGroundFeedSensor;
@@ -23,7 +25,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private DigitalInput mTopFeedSensor;
     private DutyCycleEncoder mShooterAngleEncoder;
     private CANSparkMax mGroundFeedMotor;
-    private CANSparkMax mBenderTiltMotor;
     private CANSparkMax mShooterBeltMotor;
     private TalonSRX mLinearActuatorLeftMotor;
     private TalonSRX mLinearActuatorRightMotor;
@@ -46,13 +47,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private ShooterState shooterState = ShooterState.EMPTY;
     private boolean m_isLoaded = false;
 
-    private enum BenderPosition {
-        SHOOT_SPEAKER,
-        SHOOT_AMP,
-        LOAD_INTERNAL,
-        LOAD_SOURCE
-    };
-
     public enum OperatorEvent {
         NONE,
         PREP_AMP,
@@ -60,14 +54,6 @@ public class ShooterSubsystem extends SubsystemBase {
         FIRE_AMP,
     };
     private OperatorEvent currentEvent;
-
-    // private CANSparkMax mBenderMotor;
-    // private RelativeEncoder mBenderEncoder;
-    // private SparkPIDController mBenderPidController;
-
-    // private final static double BENDER_P = 0.0;
-    // private final static double BENDER_I = 0.0;
-    // private final static double BENDER_D = 0.0;
 
     private final static double LOAD_SPEED_GROUND = 1;
     private final static double LOAD_SPEED_BELT = -0.2;
@@ -78,20 +64,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double BENDER_SHOOT_SPEED = 1.0;
     private final static double LINEAR_ACTUATOR_RAISE_SPEED = 0.7;
     private final static double LINEAR_ACTUATOR_LOWER_SPEED = -0.7;
-    private final static double BENDER_RAISE_SPEED = 0.2;
-    private final static double BENDER_LOWER_SPEED = -0.2;
-
-    /** angle where bender is out of the way so we can shoot at the speaker */
-    private final static double BENDER_SPEAKER_LOCATION = 0;
-
-    /** angle where bender is down so we can load it with a note from internal storage*/
-    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 0;
-
-    /** angle where bender is in the correct location to shoot into the amp */
-    private final static double BENDER_SHOOT_AMP_LOCATION = 0;
-
-    /** distance away from expected location that we still concider good */
-    private final static double BENDER_ANGLE_THRESHOLD = 0;
 
     enum ActuatorState {
             RAISING,
@@ -109,19 +81,10 @@ public class ShooterSubsystem extends SubsystemBase {
         mTopFeedSensor = new DigitalInput(Constants.kTopFeedSensorId);
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mGroundFeedMotor = new CANSparkMax(Constants.kGroundFeedMotorId, MotorType.kBrushless);
-        mBenderTiltMotor = new CANSparkMax(Constants.kBenderTiltMotorId, MotorType.kBrushless);
         mShooterBeltMotor = new CANSparkMax(Constants.kShooterBeltMotorId, MotorType.kBrushless);
         mLinearActuatorLeftMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
         mLinearActuatorRightMotor = new TalonSRX(Constants.kLinearActuatorRightMotorId);
         mLinearActuatorLeftMotor.follow(mLinearActuatorRightMotor);
-        // mLinearActuatorLeftMotor.setControl(new Follower(Constants.kLinearActuatorRightMotorId, false));
-        // mBenderMotor = new CANSparkMax(Constants.kBenderMotorId, MotorType.kBrushless);
-        // mBenderEncoder = mBenderMotor.getAlternateEncoder(Type.kQuadrature, 8192); // REV Through-bore encoder is 8192 counts/rev
-        // mBenderPidController = mBenderMotor.getPIDController();
-        // mBenderPidController.setP(BENDER_P);
-        // mBenderPidController.setI(BENDER_I);
-        // mBenderPidController.setD(BENDER_D);
-        // mBenderPidController.setFeedbackDevice(mBenderEncoder);
     }
     
     public void initStateMachine(boolean preloaded) {
@@ -185,20 +148,21 @@ public class ShooterSubsystem extends SubsystemBase {
 
                 if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
                     currentEvent = OperatorEvent.NONE;
+                    // ensure bender is out of the way
+                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
                     changeState(ShooterState.FIRE_SPEAKER_PREP);
-                } else if (currentEvent == OperatorEvent.PREP_AMP) {
+                }
+                else if (currentEvent == OperatorEvent.PREP_AMP) {
                     currentEvent = OperatorEvent.NONE;
+                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
                     changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
                 }
 
                 break;
             case FIRE_SPEAKER_PREP:
                 mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
-                // ensure bender is out of the way
-                setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-
                 // TODO: Make this if statement work
-                if (flywheelIsAtShootingSpeed() && benderIsInSpeakerLocation()) {
+                if (flywheelIsAtShootingSpeed() && mBenderAngleSubsystem.benderIsInSpeakerLocation()) {
                     changeState(ShooterState.FIRE_SPEAKER);
                     timeCheck = Timer.getFPGATimestamp();
                 }
@@ -212,13 +176,11 @@ public class ShooterSubsystem extends SubsystemBase {
                 break;
 
             case BENDER_LOAD_INTERNAL_PREP:
-                setBenderPosition(BenderPosition.LOAD_INTERNAL);
-                if (benderIsInInternalLoadingLocation()) {
+                if (mBenderAngleSubsystem.benderIsInInternalLoadingLocation()) {
                     changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER);
                 }
                 break;
             case BENDER_LOAD_INTERNAL_LOAD_BENDER:
-                mBenderTiltMotor.set(0);
                 mBenderFeedMotor.set(ControlMode.PercentOutput, 0.05); // "slow"
                 mShooterBeltMotor.set(0.05);
                 mShooterFeedMotor.set(0.05);
@@ -229,6 +191,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 break;
             case BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE:
                 if (!isNoteAtTop()) {
+                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
                     changeState(ShooterState.BENDER_LOAD_INTERNAL_LOADED);
                 }
                 break;
@@ -237,13 +200,11 @@ public class ShooterSubsystem extends SubsystemBase {
                 mShooterBeltMotor.set(0);
                 mShooterFeedMotor.set(0);
                 mShooterFlywheelMotor.set(0);
-                setBenderPosition(BenderPosition.SHOOT_AMP);
-                if(benderIsInAmpLocation()) {
+                if(mBenderAngleSubsystem.benderIsInAmpLocation()) {
                     changeState(ShooterState.READY_FOR_FIRE_AMP);
                 }
                 break;
             case READY_FOR_FIRE_AMP:
-                mBenderTiltMotor.set(0);
                 // If amp shooter button is pressed
                 // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
                 break;
@@ -296,48 +257,6 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     *  @return true if the bender is flipped back out of the way so 
-     *  that a note can be shot at the speaker without hitting the bender
-     */
-    private boolean benderIsInSpeakerLocation() {
-        // FIXME:
-        // double deviation = Math.abs (mBenderTiltMotor.getAlternateEncoder(8192)
-        //     .getPosition() - BENDER_SPEAKER_LOCATION);
-        // return deviation < BENDER_ANGLE_THRESHOLD;
-        return true;
-    }
-
-    /**
-     * @return true if the bender is flipped forward so that a note can be fed from
-     * the internal chamber into the bender
-     */
-    private boolean benderIsInInternalLoadingLocation() {
-        // FIXME:
-        //  double deviation = Math.abs (mBenderTiltMotor.getAlternateEncoder(8192)
-        //      .getPosition() - BENDER_INTERNAL_LOAD_NOTE_LOCATION);
-        //  return deviation < BENDER_ANGLE_THRESHOLD;
-        return true;
-    }
-
-    /**
-     * @return true if the bender is is the correct location for firing into the amp
-     */
-    private boolean benderIsInAmpLocation() {
-        // FIXME:
-        //  double deviation = Math.abs (mBenderTiltMotor.getAlternateEncoder(8192)
-        //      .getPosition() - BENDER_SHOOT_AMP_LOCATION);
-        //  return deviation < BENDER_ANGLE_THRESHOLD;
-        return true;
-    }
-
-    /**
-     * Sets the desired position of the bender
-     */
-    private void setBenderPosition(BenderPosition position) {
-        System.out.println("setBenderPosition: " + position);
-    }
-
-    /**
      * @return true if the flywheel is up to speed for shooting in the speaker
      */
     private boolean flywheelIsAtShootingSpeed() {
@@ -349,7 +268,6 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFlywheelMotor.set(0);
         mGroundFeedMotor.set(0);
         mShooterBeltMotor.set(0);
-        mBenderTiltMotor.set(0);
     }
 
     public void stopBottomMotor() {
@@ -387,10 +305,6 @@ public class ShooterSubsystem extends SubsystemBase {
         mGroundFeedMotor.set(LOAD_SPEED_GROUND);
         mShooterBeltMotor.set(LOAD_SPEED_BELT);
         mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
-
-        // FIXME: remove this
-        // mShooterFeedMotor.set(0.1);
-        // mShooterFlywheelMotor.set(1);
     }
 
     private void launchSpeaker() {
@@ -398,8 +312,7 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterBeltMotor.set(SPEAKER_SHOOT_SPEED);
     }
 
-    public void stopAllShooterMotors() {
-        // mBenderTiltMotor.set(0);
+    private void stopAllShooterMotors() {
         mGroundFeedMotor.set(0);
         mShooterBeltMotor.set(0);
         mShooterFeedMotor.set(0);

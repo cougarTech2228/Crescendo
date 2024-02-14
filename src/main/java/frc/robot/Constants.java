@@ -19,12 +19,13 @@ public class Constants
     public static final int kLinearActuatorRightMotorId = 13; // Talon SRX
 
     // Sensors
-    public static final int kClimberTopSensorId = 2;
-    public static final int kClimberBottomSensorId = 1; 
     public static final int kGroundFeedSensorId = 0; // Is suppposed to be 0 don't change it
+    public static final int kClimberBottomSensorId = 1;
+    public static final int kClimberTopSensorId = 2;
+    public static final int kElevatorBottomSensorId = 3;
+    public static final int kElevatorTopSensorId = 4;
+    public static final int kShooterAngleEncoderId = 5;
     public static final int kMiddleFeedSensorId = 6;
     public static final int kTopFeedSensorId = 7;
-    public static final int kShooterAngleEncoderId = 5;
-    public static final int kElevatorTopSensorId = 4;
-    public static final int kElevatorBottomSensorId = 3;
+    public static final int kBenderAngleEncoderPin = 8;
 }
