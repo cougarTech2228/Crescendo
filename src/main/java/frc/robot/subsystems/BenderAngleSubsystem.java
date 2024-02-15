@@ -54,33 +54,34 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     private static final double kVVolt = 0;
     private static final double kAVolt = 0;
 
-    private static final double kP = 0;
+    private static final double kP = 1.5;
     private static final double kI = 0.0;
     private static final double kD = 0.0;
-    private static final double kDt = 0.0;
+    private static final double kDt = 0.02;
 
-    private static final double kMaxVelocity = 5.0;
-    private static final double kMaxAcceleration = 1.0;
+    private static final double kMaxVelocity = 10.0;
+    private static final double kMaxAcceleration = 2.0;
 
-    private static final double kMotorVoltageLimit = 12;
+    private static final double kMotorVoltageLimit = 3;
 
-    private static final double ANGLE_MIN = 0;
-    private static final double ANGLE_MAX = 0;
+    private static final double ANGLE_MIN = 5;
+    private static final double ANGLE_MAX = 48;
 
     // private final static double BENDER_RAISE_SPEED = 0.2;
     // private final static double BENDER_LOWER_SPEED = -0.2;
 
     /** angle where bender is out of the way so we can shoot at the speaker */
-    private final static double BENDER_SPEAKER_LOCATION = 0;
+    private final static double BENDER_SPEAKER_LOCATION = 16;
 
     /** angle where bender is down so we can load it with a note from internal storage */
-    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 0;
+    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 45.5;
 
     /** angle where bender is positioned so we can load it with a note from the source */
-    private final static double BENDER_LOAD_SOURCE_LOCATION = 0;
+    private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
 
     /** angle where bender is in the correct location to shoot into the amp */
-    private final static double BENDER_SHOOT_AMP_LOCATION = 0;
+    private final static double BENDER_SHOOT_AMP_LOCATION = 29
+    ;
 
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 0.4;
@@ -180,17 +181,17 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     public void periodic() {
         super.periodic();
 
-        m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100;
+        m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
 
 
-        // Boundary check the distance sensor's range values
-        if (m_benderAngle > ANGLE_MAX) {
-            System.out.println("Bender angle sensor exceeded max range limit");
-            m_benderAngle = ANGLE_MAX;
-        } else if (m_benderAngle < ANGLE_MIN) {
-            System.out.println("Bender angle sensor exceeded min range limit");
-            m_benderAngle = ANGLE_MIN;
-        }
+        // // Boundary check the distance sensor's range values
+        // if (m_benderAngle > ANGLE_MAX) {
+        //     System.out.println("Bender angle sensor exceeded max range limit");
+        //     m_benderAngle = ANGLE_MAX;
+        // } else if (m_benderAngle < ANGLE_MIN) {
+        //     System.out.println("Bender angle sensor exceeded min range limit");
+        //     m_benderAngle = ANGLE_MIN;
+        // }
 
         if (DriverStation.isDisabled()) {
             pidController.setGoal(getMeasurement());
@@ -287,10 +288,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, newOutput);
         }
-
-        System.out.println("bender voltage: " + val);
-        // FIXME to actually set the motor once this is determined to be a sane value
-        //mBenderTiltMotor.setVoltage(val);
+        mBenderTiltMotor.setVoltage(-val);
     }
 
     @Override

@@ -33,6 +33,7 @@ import frc.robot.subsystems.AprilTagSubsystem;
 import frc.robot.subsystems.ButtonBoardSubsystem;
 import frc.robot.subsystems.DrivebaseSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
 
@@ -108,7 +109,12 @@ public class RobotContainer {
        drivetrain.seedFieldRelative(rotatedPose);
     }));
 
-    // joystick.y().onTrue(shootCommand);
+    // joystick.y().onTrue(new InstantCommand(() -> {
+    //   shooter.setBender(BenderPosition.SHOOT_SPEAKER);
+    // }));
+    // joystick.x().onTrue(new InstantCommand(() -> {
+    //   shooter.setBender(BenderPosition.LOAD_INTERNAL);
+    // }));
 
     // joystick.x().onTrue(new InstantCommand(() -> shooter.loadNote()));
     // joystick.x().onFalse(new InstantCommand(() -> shooter.stopMotors()));

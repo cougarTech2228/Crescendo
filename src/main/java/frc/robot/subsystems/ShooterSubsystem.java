@@ -332,4 +332,8 @@ public class ShooterSubsystem extends SubsystemBase {
     public void operatorEvent(OperatorEvent event) {
         currentEvent = event;
     }
+
+    // public void setBender(BenderAngleSubsystem.BenderPosition position) {
+    //     mBenderAngleSubsystem.setBenderPosition(position);
+    // }
 };
