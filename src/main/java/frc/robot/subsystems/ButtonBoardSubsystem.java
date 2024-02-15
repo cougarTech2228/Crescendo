@@ -246,9 +246,21 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
         shootAmpButton().onFalse(
             new InstantCommand(() -> {
-                System.out.println("Shoot Amp Button Realeased");
+                System.out.println("Shoot Amp Button Released");
                 shooterSubsystem.operatorEvent(OperatorEvent.NONE);
             })
-        );    
+        );
+        spitButton().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("Spit Button Pressed");
+                shooterSubsystem.operatorEvent(OperatorEvent.SPIT);
+            })
+        );
+        spitButton().onFalse(
+            new InstantCommand(() -> {
+                System.out.println("Spit Button Released!");
+                shooterSubsystem.operatorEvent(OperatorEvent.NONE);
+            })
+        );
     }
 }

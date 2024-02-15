@@ -118,6 +118,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
         // SmartDashboard.putNumber("Alt Encoder Velocity", mBenderEncoder.getVelocity());
         // SmartDashboard.putNumber("Applied Output", mBenderMotor.getAppliedOutput());
+        if(currentEvent == OperatorEvent.SPIT) {
+            mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
+            return;
+        }
         if(currentActuatorState == ActuatorState.RAISING && actuatorAtTop()) {
             stopLinearActuator();
         }
@@ -218,6 +222,7 @@ public class ShooterSubsystem extends SubsystemBase {
                 }
                 break;
         }
+        
     }
 
     /**
