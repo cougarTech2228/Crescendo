@@ -80,8 +80,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
 
     /** angle where bender is in the correct location to shoot into the amp */
-    private final static double BENDER_SHOOT_AMP_LOCATION = 29
-    ;
+    private final static double BENDER_SHOOT_AMP_LOCATION = 18.74;
 
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 0.4;

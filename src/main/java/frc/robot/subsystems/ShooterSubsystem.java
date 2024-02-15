@@ -1,9 +1,11 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
@@ -62,8 +64,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double LOAD_SPEED_SHOOTER_FEED = 0.1;
     private final static double SHOOTER_DELAY = 0.5;
     private final static double SPEAKER_SHOOT_SPEED = 1.0;
+    private final static double SPEAKER_SHOOT_BELT_SPEED = -0.2;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
+    private final static double BENDER_FEED_SPEED = -1.0;
     private final static double LINEAR_ACTUATOR_RAISE_SPEED = 0.7;
     private final static double LINEAR_ACTUATOR_LOWER_SPEED = -0.7;
 
@@ -87,7 +91,11 @@ public class ShooterSubsystem extends SubsystemBase {
         mLinearActuatorLeftMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
         mLinearActuatorRightMotor = new TalonSRX(Constants.kLinearActuatorRightMotorId);
         mLinearActuatorLeftMotor.follow(mLinearActuatorRightMotor);
-    }
+        mBenderFeedMotor = new TalonSRX(Constants.kBenderFeedMotorId);
+        mBenderFeedMotor.setNeutralMode(NeutralMode.Brake);
+        mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
+        mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
+    }   
     
     public void initStateMachine(boolean preloaded) {
         if (preloaded) {
@@ -187,10 +195,10 @@ public class ShooterSubsystem extends SubsystemBase {
                 }
                 break;
             case BENDER_LOAD_INTERNAL_LOAD_BENDER:
-                mBenderFeedMotor.set(ControlMode.PercentOutput, 0.05); // "slow"
-                mShooterBeltMotor.set(0.05);
-                mShooterFeedMotor.set(0.05);
-                mShooterFlywheelMotor.set(0.05);
+                mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED); // "slow"
+                mShooterBeltMotor.set(LOAD_SPEED_BELT);
+                mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
+                mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
                 if (isNoteAtTop()) {
                     changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE);
                 }
@@ -213,6 +221,9 @@ public class ShooterSubsystem extends SubsystemBase {
             case READY_FOR_FIRE_AMP:
                 // If amp shooter button is pressed
                 // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
+                if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
+                    changeState(ShooterState.FIRE_AMP);
+                }
                 break;
             case FIRE_AMP:
                 mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
@@ -237,7 +248,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * feeder, and the main chamber
      */
     private boolean isNoteAtMiddle() {
-        return !mMiddleFeedSensor.get();
+        return mMiddleFeedSensor.get();
     }
 
     /**
@@ -267,7 +278,9 @@ public class ShooterSubsystem extends SubsystemBase {
      * @return true if the flywheel is up to speed for shooting in the speaker
      */
     private boolean flywheelIsAtShootingSpeed() {
-        return mShooterFlywheelMotor.getVelocity().getValue() >= 1.0;
+        System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
+        return true;
+        // return mShooterFlywheelMotor.getVelocity().getValue() >= 1.0;
     }
 
     public void stopFeedShootMotors() {
@@ -315,8 +328,9 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private void launchSpeaker() {
+        System.out.println("launchSpeaker");
         mShooterFeedMotor.set(SPEAKER_SHOOT_SPEED);
-        mShooterBeltMotor.set(SPEAKER_SHOOT_SPEED);
+        mShooterBeltMotor.set(SPEAKER_SHOOT_BELT_SPEED);
     }
 
     private void stopAllShooterMotors() {
