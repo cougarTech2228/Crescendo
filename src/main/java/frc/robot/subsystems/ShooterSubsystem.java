@@ -20,16 +20,14 @@ import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 public class ShooterSubsystem extends SubsystemBase {
 
     private BenderAngleSubsystem mBenderAngleSubsystem = new BenderAngleSubsystem();
+    private ShooterAngleSubsystem mShooterAngleSubsystem = new ShooterAngleSubsystem();
     private TalonFX mShooterFeedMotor;
     private TalonFX mShooterFlywheelMotor;
     private DigitalInput mGroundFeedSensor;
     private DigitalInput mMiddleFeedSensor;
     private DigitalInput mTopFeedSensor;
-    private DutyCycleEncoder mShooterAngleEncoder;
     private CANSparkMax mGroundFeedMotor;
     private CANSparkMax mShooterBeltMotor;
-    private TalonSRX mLinearActuatorLeftMotor;
-    private TalonSRX mLinearActuatorRightMotor;
     private TalonSRX mBenderFeedMotor;
     double timeCheck;
     private enum ShooterState {
@@ -71,12 +69,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double LINEAR_ACTUATOR_RAISE_SPEED = 0.7;
     private final static double LINEAR_ACTUATOR_LOWER_SPEED = -0.7;
 
-    enum ActuatorState {
-            RAISING,
-            LOWERING,
-            STOPPED,
-        }
-    private ActuatorState currentActuatorState = ActuatorState.STOPPED;
+    
 
 
     public ShooterSubsystem() {
@@ -85,12 +78,9 @@ public class ShooterSubsystem extends SubsystemBase {
         mGroundFeedSensor = new DigitalInput(Constants.kGroundFeedSensorId);
         mMiddleFeedSensor = new DigitalInput(Constants.kMiddleFeedSensorId);
         mTopFeedSensor = new DigitalInput(Constants.kTopFeedSensorId);
-        mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mGroundFeedMotor = new CANSparkMax(Constants.kGroundFeedMotorId, MotorType.kBrushless);
         mShooterBeltMotor = new CANSparkMax(Constants.kShooterBeltMotorId, MotorType.kBrushless);
-        mLinearActuatorLeftMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
-        mLinearActuatorRightMotor = new TalonSRX(Constants.kLinearActuatorRightMotorId);
-        mLinearActuatorLeftMotor.follow(mLinearActuatorRightMotor);
+        
         mBenderFeedMotor = new TalonSRX(Constants.kBenderFeedMotorId);
         mBenderFeedMotor.setNeutralMode(NeutralMode.Brake);
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -121,7 +111,6 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putBoolean("GroundFeedSensor", isNoteAtBottom());
         SmartDashboard.putBoolean("MiddleFeedSensor", isNoteAtMiddle());
         SmartDashboard.putBoolean("TopFeedSensor", isNoteAtTop());
-        SmartDashboard.putNumber("ShooterAngleEncoder", mShooterAngleEncoder.get());
         SmartDashboard.putString("Shooter State:", shooterState.name());
 
         // SmartDashboard.putNumber("Alt Encoder Velocity", mBenderEncoder.getVelocity());
@@ -129,12 +118,6 @@ public class ShooterSubsystem extends SubsystemBase {
         if(currentEvent == OperatorEvent.SPIT) {
             mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
             return;
-        }
-        if(currentActuatorState == ActuatorState.RAISING && actuatorAtTop()) {
-            stopLinearActuator();
-        }
-        else if(currentActuatorState == ActuatorState.LOWERING && actuatorAtBottom()) {
-            stopLinearActuator();
         }
         switch (shooterState) {
             case EMPTY:
@@ -259,22 +242,6 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     * @return true if the actuator is at max high position
-     */
-    private boolean actuatorAtTop() {
-        // 0.187241 is the highest angle
-        return(mShooterAngleEncoder.get() <= 0.21);
-    }
-
-    /**
-     * @return true if the actuator is at max bottom position.
-     */
-    private boolean actuatorAtBottom() {
-        // 0.234322 is lowest angle.
-        return(mShooterAngleEncoder.get() >= 0.222);
-    }
-
-    /**
      * @return true if the flywheel is up to speed for shooting in the speaker
      */
     private boolean flywheelIsAtShootingSpeed() {
@@ -295,21 +262,18 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void raiseLinearActuator() {
-        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_RAISE_SPEED);
-        // mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_RAISE_SPEED);
+        mShooterAngleSubsystem.raiseShooter();
         System.out.println("raising");
     }
 
     public void lowerLinearActuator() {
-        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_LOWER_SPEED);
-        // mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, LINEAR_ACTUATOR_LOWER_SPEED);
+        mShooterAngleSubsystem.lowerShooter();
         System.out.println("lowering");
     }
 
     public void stopLinearActuator() {
         System.out.println("stop linear actuator shooter subsystem");
-        mLinearActuatorRightMotor.set(TalonSRXControlMode.PercentOutput, 0);
-        // mLinearActuatorLeftMotor.set(TalonSRXControlMode.PercentOutput, 0);
+        mShooterAngleSubsystem.stopMotor();
     }
 
     private boolean isShooterDelayExpired() {
