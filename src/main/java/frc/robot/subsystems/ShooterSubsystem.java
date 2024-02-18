@@ -1,5 +1,8 @@
 package frc.robot.subsystems;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
@@ -12,6 +15,8 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -58,8 +63,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private OperatorEvent currentEvent;
 
     private final static double LOAD_SPEED_GROUND = 1;
-    private final static double LOAD_SPEED_BELT = -0.2;
-    private final static double LOAD_SPEED_SHOOTER_FEED = 0.1;
+    private final static double LOAD_SPEED_BELT = -0.1;
+    private final static double LOAD_SPEED_SHOOTER_FEED = 0.05;
     private final static double SHOOTER_DELAY = 0.5;
     private final static double SPEAKER_SHOOT_SPEED = 1.0;
     private final static double SPEAKER_SHOOT_BELT_SPEED = -0.2;
@@ -85,6 +90,35 @@ public class ShooterSubsystem extends SubsystemBase {
         mBenderFeedMotor.setNeutralMode(NeutralMode.Brake);
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
         mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
+
+        ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
+        sbTab.addBoolean("GroundFeedSensor", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isNoteAtBottom();
+            };
+        });
+
+        sbTab.addBoolean("MiddleFeedSensor", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isNoteAtMiddle();
+            };
+        });
+
+        sbTab.addBoolean("TopFeedSensor", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isNoteAtTop();
+            };
+        });
+
+        sbTab.addString("Shooter state", new Supplier<String>() {
+            @Override
+            public String get() {
+                return shooterState.name();
+            }
+        });
     }   
     
     public void initStateMachine(boolean preloaded) {
@@ -108,10 +142,6 @@ public class ShooterSubsystem extends SubsystemBase {
     public void periodic() {
         // TODO Auto-generated method stub
         super.periodic();
-        SmartDashboard.putBoolean("GroundFeedSensor", isNoteAtBottom());
-        SmartDashboard.putBoolean("MiddleFeedSensor", isNoteAtMiddle());
-        SmartDashboard.putBoolean("TopFeedSensor", isNoteAtTop());
-        SmartDashboard.putString("Shooter State:", shooterState.name());
 
         // SmartDashboard.putNumber("Alt Encoder Velocity", mBenderEncoder.getVelocity());
         // SmartDashboard.putNumber("Applied Output", mBenderMotor.getAppliedOutput());
@@ -153,6 +183,11 @@ public class ShooterSubsystem extends SubsystemBase {
                     currentEvent = OperatorEvent.NONE;
                     mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
                     changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
+                }
+                else if(currentEvent == OperatorEvent.PREP_SPEAKER){
+                    currentEvent = OperatorEvent.NONE;
+                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+                    // changeState(ShooterState.FIRE_SPEAKER_PREP);
                 }
 
                 break;
@@ -231,7 +266,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * feeder, and the main chamber
      */
     private boolean isNoteAtMiddle() {
-        return mMiddleFeedSensor.get();
+        return !mMiddleFeedSensor.get();
     }
 
     /**
@@ -245,9 +280,9 @@ public class ShooterSubsystem extends SubsystemBase {
      * @return true if the flywheel is up to speed for shooting in the speaker
      */
     private boolean flywheelIsAtShootingSpeed() {
-        System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
-        return true;
-        // return mShooterFlywheelMotor.getVelocity().getValue() >= 1.0;
+        //System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
+        // return true;
+        return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
     }
 
     public void stopFeedShootMotors() {

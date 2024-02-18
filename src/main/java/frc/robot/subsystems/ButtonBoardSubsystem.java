@@ -58,83 +58,84 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     // Joystick #1 Buttons
 
-    private JoystickButton raiseElevatorButton() {
-        return new JoystickButton(m_joystick1, 3);
+    private JoystickButton lowerElevatorButton() {
+        return new JoystickButton(m_joystick2, 3);
     }
 
-    private JoystickButton lowerElevatorButton() {
-        return new JoystickButton(m_joystick1, 5);
+    private JoystickButton raiseElevatorButton() {
+        return new JoystickButton(m_joystick2, 5);
     }
 
     private JoystickButton raiseClimberButton() {
-        return new JoystickButton(m_joystick1, 4);
+        return new JoystickButton(m_joystick2, 4);
     }
     
     private JoystickButton lowerClimberButton() {
-        return new JoystickButton(m_joystick1, 6);
+        return new JoystickButton(m_joystick2, 6);
     }
 
     private JoystickButton raiseLinearActuatorButton() {
-        return new JoystickButton(m_joystick1, 2);
+        return new JoystickButton(m_joystick2, 2);
     }
 
     private JoystickButton lowerLinearActuatorButton() {
-        return new JoystickButton(m_joystick1, 1);
+        return new JoystickButton(m_joystick2, 1);
     }
 
     private JoystickButton spitButton() {
-        return new JoystickButton(m_joystick1, 8);
+        return new JoystickButton(m_joystick2, 8);
     }
 
-    private JoystickButton fineCoarseSwitch() {
-        return new JoystickButton(m_joystick1, 7);
+    private JoystickButton driveCameraSwitch() {
+        return new JoystickButton(m_joystick2, 7);
     }    
 
     // Joystick #2 Buttons
     
 
     private JoystickButton prepSpeakerButton() {
-        return new JoystickButton(m_joystick2, 1);
+        return new JoystickButton(m_joystick1, 1);
     }
 
     private JoystickButton shootSpeakerButton() {
-        return new JoystickButton(m_joystick2, 2);
+        return new JoystickButton(m_joystick1, 2);
     }
 
     private JoystickButton prepAmpButton() {
-        return new JoystickButton(m_joystick2, 3);
+        return new JoystickButton(m_joystick1, 3);
     }
 
     private JoystickButton shootAmpButton() {
-        return new JoystickButton(m_joystick2, 4);
+        return new JoystickButton(m_joystick1, 4);
     }
 
     private JoystickButton blank5() {
-        return new JoystickButton(m_joystick2, 5);
+        return new JoystickButton(m_joystick1, 5);
     }  
 
     private JoystickButton blank6() {
-        return new JoystickButton(m_joystick2, 6);
+        return new JoystickButton(m_joystick1, 6);
     }
 
     private JoystickButton blank7() {
-        return new JoystickButton(m_joystick2, 7);
+        return new JoystickButton(m_joystick1, 7);
     }
 
     private JoystickButton blank8() {
-        return new JoystickButton(m_joystick2, 8);
+        return new JoystickButton(m_joystick1, 8);
     }
 
-    public boolean isFineOperationMode() {
+    public boolean isDriveOperationMode() {
         return (m_operationMode == ButtonBoardOperationMode.Drive);
     }
 
     private void setOperationMode() {
-        if (fineCoarseSwitch().getAsBoolean()) {
+        if (driveCameraSwitch().getAsBoolean()) {
             m_operationMode = ButtonBoardOperationMode.Drive;
         } else {
             m_operationMode = ButtonBoardOperationMode.Camera;
         }
+        System.out.println(m_operationMode);
     }
 
     @Override
@@ -151,7 +152,13 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     public void configureButtonBindings() {
 
-        
+        driveCameraSwitch().onTrue(
+            new InstantCommand(() -> setOperationMode())
+        );
+
+        driveCameraSwitch().onFalse(
+            new InstantCommand(() -> setOperationMode())
+        );
 
         raiseElevatorButton().onTrue(
             new InstantCommand(() -> elevatorSubsystem.lowerElevator())
@@ -228,12 +235,12 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })
         );
 
-        prepSpeakerButton().onFalse(
-            new InstantCommand(() -> {
-                System.out.println("Prep Speaker Button Released");
-                shooterSubsystem.operatorEvent(OperatorEvent.NONE);
-            })
-        );
+        // prepSpeakerButton().onFalse(
+        //     new InstantCommand(() -> {
+        //         System.out.println("Prep Speaker Button Released");
+        //         shooterSubsystem.operatorEvent(OperatorEvent.NONE);
+        //     })
+        // );
 
         shootSpeakerButton().onTrue(
             new InstantCommand(() -> {

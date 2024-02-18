@@ -1,9 +1,14 @@
 package frc.robot.subsystems;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -13,8 +18,8 @@ public class ClimberSubsystem extends SubsystemBase {
     private TalonFX mClimberMotor;
     private DigitalInput mClimberTopSensor;
     private DigitalInput mClimberBottomSensor;
-    private final static double LOWERSPEED = -0.1;
-    private final static double RAISESPEED = 0.1;
+    private final static double LOWERSPEED = -1;
+    private final static double RAISESPEED = 1;
 
     enum State{
         STOPPED,
@@ -29,13 +34,29 @@ public class ClimberSubsystem extends SubsystemBase {
         mClimberTopSensor = new DigitalInput(Constants.kClimberTopSensorId);
         mClimberBottomSensor = new DigitalInput(Constants.kClimberBottomSensorId);
         mClimberMotor.setNeutralMode(NeutralModeValue.Brake);
+
+        ShuffleboardTab m_sbTab = Shuffleboard.getTab("Climber (Debug)");
+
+        m_sbTab.addBoolean("ClimberTopSensor", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isClimberAtTop();
+            };
+        });
+
+        m_sbTab.addBoolean("ClimberBottomSensor", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isClimberAtBottom();
+            };
+        });
     }
 
     @Override
     public void periodic() {
         super.periodic();
-        SmartDashboard.putBoolean("ClimberTopSensor", isClimberAtTop());
-        SmartDashboard.putBoolean("ClimberBottomSensor", isClimberAtBottom());
+        // SmartDashboard.putBoolean("ClimberTopSensor", isClimberAtTop());
+        // SmartDashboard.putBoolean("ClimberBottomSensor", isClimberAtBottom());
         if (currentState == State.RAISING && isClimberAtTop()) {
             stopMotors();   
         }

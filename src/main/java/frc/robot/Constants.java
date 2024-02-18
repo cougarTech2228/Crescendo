@@ -29,4 +29,7 @@ public class Constants
     public static final int kMiddleFeedSensorId = 6;
     public static final int kTopFeedSensorId = 7;
     public static final int kBenderAngleEncoderPin = 8;
+
+    //PWM
+    public static final int kDriverCameraPWMID = 0;
 }

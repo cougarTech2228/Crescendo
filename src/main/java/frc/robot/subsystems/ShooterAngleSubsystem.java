@@ -4,6 +4,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -19,8 +20,8 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     private ShuffleboardTab m_sbTab;
     private TalonSRX mLinearActuatorMotor;
     private DutyCycleEncoder mShooterAngleEncoder;
-    private static final double shooterSpeedUp = -0.3;
-    private static final double shooterSpeedDown = 0.3;
+    private static final double shooterSpeedUp = -1;
+    private static final double shooterSpeedDown = 1;
     private double m_shooterAngle;
 
     private static final double kSVolts = 0;
@@ -37,6 +38,9 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     private static final double kMaxAcceleration = 2.0;
 
     private static final double kMotorVoltageLimit = .1;
+
+    //max up is 36.4
+    //min down is 41.1
 
     /** angle where shooter is able to shoot at the speaker */
     private final static double SHOOTER_SUBWOOFER_HIEGHT = 0;
@@ -81,6 +85,7 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
         mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
     
+        mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
         m_sbTab = Shuffleboard.getTab("Shooter (Debug)");
 
         m_sbTab.addDouble("Encoder", new DoubleSupplier() {
@@ -124,12 +129,24 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
                 return m_shooterAngle;
             };
         });
+
+        new Thread("shooterAngleEncoder") {
+            public void run() {
+                while (true) {
+                    m_shooterAngle = mShooterAngleEncoder.getAbsolutePosition() * 100d;
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+        }.start();
     }
 
     @Override
     public void periodic() {
         super.periodic();
-        m_shooterAngle = mShooterAngleEncoder.getAbsolutePosition() * 100d;
 
         if (pidController.atGoal()) {
             stopMotor();

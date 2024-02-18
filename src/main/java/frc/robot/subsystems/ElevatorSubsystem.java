@@ -13,8 +13,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private TalonFX mElevatorMotor;
     private DigitalInput mElevatorTopSensor;
     private DigitalInput mElevatorBottomSensor;
-    private static final double elevatorSpeedUp = -0.3;
-    private static final double elevatorSpeedDown = 0.3;
+    private static final double elevatorSpeedUp = -0.6;
+    private static final double elevatorSpeedDown = 0.6;
     enum State {
         STOPPED,
         RAISING,

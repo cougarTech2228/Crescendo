@@ -71,16 +71,16 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     // private final static double BENDER_LOWER_SPEED = -0.2;
 
     /** angle where bender is out of the way so we can shoot at the speaker */
-    private final static double BENDER_SPEAKER_LOCATION = 16;
+    private final static double BENDER_SPEAKER_LOCATION = 51.6;
 
     /** angle where bender is down so we can load it with a note from internal storage */
-    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 45.5;
+    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 25.9;
 
     /** angle where bender is positioned so we can load it with a note from the source */
     private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
 
     /** angle where bender is in the correct location to shoot into the amp */
-    private final static double BENDER_SHOOT_AMP_LOCATION = 18.74;
+    private final static double BENDER_SHOOT_AMP_LOCATION = 46.1;
 
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 0.4;
@@ -109,6 +109,8 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
 
         mBenderTiltMotor = new CANSparkMax(Constants.kBenderTiltMotorId, MotorType.kBrushless);
         m_benderAngleEncoder = new DutyCycleEncoder(Constants.kBenderAngleEncoderPin);
+
+        mBenderTiltMotor.setIdleMode(IdleMode.kBrake);
 
         m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
@@ -174,14 +176,23 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         //         return m_feedforwardVal;
         //     };
         // });
+        new Thread("benderAngleEncoder") {
+            public void run() {
+                while (true) {
+                     m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+        }.start();
     }
 
     @Override
     public void periodic() {
         super.periodic();
-
-        m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
-
 
         // // Boundary check the distance sensor's range values
         // if (m_benderAngle > ANGLE_MAX) {
@@ -196,19 +207,19 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
             pidController.setGoal(getMeasurement());
             disable();
             mBenderTiltMotor.set(0);
-            mBenderTiltMotor.setIdleMode(IdleMode.kCoast);
+            //mBenderTiltMotor.setIdleMode(IdleMode.kCoast);
             return;
         }
 
-        if (isBenderUpperLimitReached() && (m_benderState == BenderState.raising)) {
-            System.out.println("Bender Upper Limit Reached");
-            disable();
-            stopBender();
-        } else if (isBenderLowerLimitReached() && (m_benderState == BenderState.lowering)) {
-            System.out.println("Bender Lower Limit Reached");
-            disable();
-            stopBender();
-        }
+        // if (isBenderUpperLimitReached() && (m_benderState == BenderState.raising)) {
+        //     System.out.println("Bender Upper Limit Reached");
+        //     disable();
+        //     stopBender();
+        // } else if (isBenderLowerLimitReached() && (m_benderState == BenderState.lowering)) {
+        //     System.out.println("Bender Lower Limit Reached");
+        //     disable();
+        //     stopBender();
+        // }
 
         if (pidController.atGoal()) {
             stopBender();
@@ -287,7 +298,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, newOutput);
         }
-        mBenderTiltMotor.setVoltage(-val);
+        mBenderTiltMotor.setVoltage(val);
     }
 
     @Override

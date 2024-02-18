@@ -21,6 +21,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PWM;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -42,6 +44,9 @@ import frc.robot.subsystems.ClimberSubsystem;
 public class RobotContainer {
   private double MaxSpeed = 4; // 6 meters per second desired top speed
   private double MaxAngularRate = Math.PI; // Half a rotation per second max angular velocity
+  private Servo driverCameraTiltPWM = new Servo(Constants.kDriverCameraPWMID);
+  private double driverCameraTilt;
+  private final double driverCameraTiltChange = 0.01;
 
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final CommandXboxController joystick = new CommandXboxController(0); // My joystick
@@ -106,8 +111,9 @@ public class RobotContainer {
                 new BooleanSupplier() {
                   @Override
                   public boolean getAsBoolean() {
-                      return buttonBoardSubsystem.isFineOperationMode() &&
-                        (buttonBoardSubsystem.getJoystickX() != 0 || buttonBoardSubsystem.getJoystickY() != 0);
+                      return buttonBoardSubsystem.isDriveOperationMode() &&
+                        ((buttonBoardSubsystem.getJoystickX() < -0.1 || buttonBoardSubsystem.getJoystickX() > 0.1) ||
+                             (buttonBoardSubsystem.getJoystickY() < -0.1 || buttonBoardSubsystem.getJoystickY() > 0.1));
                   };
               })
         );
@@ -173,9 +179,22 @@ public class RobotContainer {
     
     autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
     SmartDashboard.putData("Auto Mode", autoChooser);
+    driverCameraTilt = 0.3;
   }
 
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
+  }
+  
+  public void periodic(){
+    if(!buttonBoardSubsystem.isDriveOperationMode()){
+      if(buttonBoardSubsystem.getJoystickY() >= 0.1 && driverCameraTilt > 0){
+        driverCameraTilt -= driverCameraTiltChange;
+      }
+      else if(buttonBoardSubsystem.getJoystickY() <= -0.1  && driverCameraTilt < 1){
+        driverCameraTilt += driverCameraTiltChange;
+      }
+      driverCameraTiltPWM.setPosition(driverCameraTilt);
+    }
   }
 }
