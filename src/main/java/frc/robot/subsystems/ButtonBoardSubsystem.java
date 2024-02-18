@@ -16,9 +16,24 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     private ElevatorSubsystem elevatorSubsystem;
     private ShooterSubsystem shooterSubsystem;
 
+    private double m_fwdRevJoystick;
+    private double m_strafeJoystick;
+
+    private boolean m_strafeReset = true;
+    private boolean m_fwdRevReset = true;
+
+    public static final double FINE_STRAFE_DISTANCE_CM = 3.0;
+    private static final double STRAFE_SPEED = 0.1;
+
+    private static final double FINE_DRIVE_DISTANCE_CM = 5.0;
+    private static final double DRIVE_SPEED = 0.1;
+
+    private static final double FINE_TURN_DEGREES = 2.0;
+    private static final double ANGULAR_VELOCITY = 0.4;
+
     private enum ButtonBoardOperationMode {
-        Fine,
-        Coarse
+        Drive,
+        Camera
     }
     private ShooterSubsystem m_shooterSubsystem;
 
@@ -110,15 +125,15 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         return new JoystickButton(m_joystick2, 8);
     }
 
-    private boolean isFineOperationMode() {
-        return (m_operationMode == ButtonBoardOperationMode.Fine);
+    public boolean isFineOperationMode() {
+        return (m_operationMode == ButtonBoardOperationMode.Drive);
     }
 
     private void setOperationMode() {
         if (fineCoarseSwitch().getAsBoolean()) {
-            m_operationMode = ButtonBoardOperationMode.Fine;
+            m_operationMode = ButtonBoardOperationMode.Drive;
         } else {
-            m_operationMode = ButtonBoardOperationMode.Coarse;
+            m_operationMode = ButtonBoardOperationMode.Camera;
         }
     }
 
@@ -126,7 +141,17 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     public void periodic() {
     }
 
+    public double getJoystickX(){
+        return m_joystick2.getX();
+    }
+
+    public double getJoystickY(){
+        return m_joystick2.getY();
+    }
+
     public void configureButtonBindings() {
+
+        
 
         raiseElevatorButton().onTrue(
             new InstantCommand(() -> elevatorSubsystem.lowerElevator())
