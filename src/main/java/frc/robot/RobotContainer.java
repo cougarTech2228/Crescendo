@@ -15,6 +15,7 @@ import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -117,8 +118,8 @@ public class RobotContainer {
 
     // reset the field-centric heading on left bumper press
     joystick.leftBumper().onTrue(drivetrain.runOnce(() -> {
-      var rotatedPose = drivetrain.getCurrentPose().transformBy(new Transform2d(0,0, new Rotation2d(180)));
-       drivetrain.seedFieldRelative(rotatedPose);
+      // var rotatedPose = drivetrain.getCurrentPose().transformBy(new Transform2d(0,0, new Rotation2d(180)));
+       drivetrain.seedFieldRelative(new Pose2d());
     }));
 
     // joystick.y().onTrue(new InstantCommand(() -> {

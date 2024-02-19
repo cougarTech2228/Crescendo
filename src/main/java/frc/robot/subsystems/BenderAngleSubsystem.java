@@ -5,6 +5,9 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkBase.IdleMode;
 
@@ -28,7 +31,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     };
 
     private ShuffleboardTab m_sbTab;
-    private CANSparkMax mBenderTiltMotor;
+    private TalonSRX mBenderTiltMotor;
     private BenderState m_benderState = BenderState.stopped;
     private DutyCycleEncoder m_benderAngleEncoder;
     private double m_feedforwardVal = 0;
@@ -107,10 +110,10 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
 
         pidController.setTolerance(BENDER_ANGLE_THRESHOLD);
 
-        mBenderTiltMotor = new CANSparkMax(Constants.kBenderTiltMotorId, MotorType.kBrushless);
+        mBenderTiltMotor = new TalonSRX(Constants.kBenderTiltMotorId);
         m_benderAngleEncoder = new DutyCycleEncoder(Constants.kBenderAngleEncoderPin);
 
-        mBenderTiltMotor.setIdleMode(IdleMode.kBrake);
+        mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
 
         m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
@@ -159,7 +162,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         m_sbTab.addDouble("PID output", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return mBenderTiltMotor.getAppliedOutput();
+                return mBenderTiltMotor.getMotorOutputVoltage(); //TODO
             };
         });
 
@@ -206,7 +209,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         if (DriverStation.isDisabled()) {
             pidController.setGoal(getMeasurement());
             disable();
-            mBenderTiltMotor.set(0);
+            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0);
             //mBenderTiltMotor.setIdleMode(IdleMode.kCoast);
             return;
         }
@@ -235,7 +238,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         if (m_benderState != BenderState.stopped) {
             System.out.println("stopping elevator");
             m_benderState = BenderState.stopped;
-            mBenderTiltMotor.stopMotor();
+            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0); //TODO
         }
     }
 
@@ -298,7 +301,8 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, newOutput);
         }
-        mBenderTiltMotor.setVoltage(val);
+        //mBenderTiltMotor.setVoltage(val); HELP
+        //TODO
     }
 
     @Override

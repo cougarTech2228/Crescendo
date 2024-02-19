@@ -64,11 +64,11 @@ public class ShooterSubsystem extends SubsystemBase {
     private OperatorEvent currentEvent;
 
     private final static double LOAD_SPEED_GROUND = 1;
-    private final static double LOAD_SPEED_BELT = -0.1;
+    private final static double LOAD_SPEED_BELT = -0.15;
     private final static double LOAD_SPEED_SHOOTER_FEED = 0.05;
     private final static double SPEAKER_SHOOTER_DELAY = 0.5;
-    private final static double SPEAKER_SHOOT_SPEED = 1.0;
-    private final static double SPEAKER_SHOOT_BELT_SPEED = -0.2;
+    private final static double SPEAKER_SHOOT_SPEED = 0.5;
+    private final static double SPEAKER_SHOOT_BELT_SPEED = -1;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
     private final static double BENDER_FEED_SPEED = -1.0;
@@ -320,8 +320,8 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     private boolean flywheelIsAtShootingSpeed() {
         //System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
-        // return true;
-        return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
+        return true;
+        //return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
     }
 
     public void stopFeedShootMotors() {

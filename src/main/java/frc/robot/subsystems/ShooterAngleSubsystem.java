@@ -41,7 +41,9 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     //min down is 41.1
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double SHOOT_SPEAKER_ANGLE = 0;
+    //private final static double SHOOT_SPEAKER_SIDE_ANGLE = 395;
+    //private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
+    private final static double SHOOT_SPEAKER_ANGLE = 375;
 
     /** angle where shooter is able to shoot at the amp */
     private final static double SHOOT_AMP_ANGLE = 378;
@@ -123,6 +125,10 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         super.periodic();
+        if(m_shooterAngle == 0){
+            stopMotor();
+            System.out.println("SHOOTER ANGLE ENCODER MISSING  FIX ME  HEEEEELLLLLPPPPPPPP");
+        }
         if (mAutoEnabled && atGoal()) {
             stopMotor();
             mAutoEnabled = false;
@@ -143,8 +149,6 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     public void raiseShooter() {
         // Moves the shooter
         System.out.println("called raise shooter");
-        
-        
         mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP);
         System.out.println("raising");
     }
@@ -152,8 +156,6 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     public void lowerShooter() {
         // Moves the shooter down
         System.out.println("called lower shooter");
-        
-
         mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
         System.out.println("lowering");
     }

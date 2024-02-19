@@ -42,6 +42,7 @@ public class AprilTagSubsystem extends SubsystemBase {
         } catch (IOException e) {
             System.out.println("Failed to load april tag layout");
         }
+        processingThread.start();
     }
 
     public boolean seesAprilTag(){
