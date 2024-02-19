@@ -47,9 +47,8 @@ public class RobotContainer {
   public final DrivebaseSubsystem drivetrain = TunerConstants.DriveTrain; // My drivetrain
   public final ShooterSubsystem shooter = new ShooterSubsystem();
   public final AprilTagSubsystem aprilTagSubsystem = new AprilTagSubsystem(drivetrain);
-  public final ElevatorSubsystem elevatorSubsystem = new ElevatorSubsystem();
   public final ClimberSubsystem climberSubsystem = new ClimberSubsystem();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, elevatorSubsystem, shooter);
+  public final ButtonBoardSubsystem buttonBoardSubsystem = new ButtonBoardSubsystem(climberSubsystem, shooter);
   
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()

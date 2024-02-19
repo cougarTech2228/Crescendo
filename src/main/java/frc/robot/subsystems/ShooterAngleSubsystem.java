@@ -13,15 +13,18 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
+public class ShooterAngleSubsystem extends SubsystemBase {
     
     private ShuffleboardTab m_sbTab;
     private TalonSRX mLinearActuatorMotor;
     private DutyCycleEncoder mShooterAngleEncoder;
-    private static final double shooterSpeedUp = -1;
-    private static final double shooterSpeedDown = 1;
+    private static final double SPEED_UP = -1;
+    private static final double SPEED_DOWN = 1;
+    private static final double SPEED_UP_FINE = -0.3;
+    private static final double SPEED_DOWN_FINE = 0.3;
     private double m_shooterAngle;
 
     // private static final double kSVolts = 0;
@@ -29,15 +32,10 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     // private static final double kVVolt = 0;
     // private static final double kAVolt = 0;
 
-    private static final double kP = 0.1;
-    private static final double kI = 0.0;
-    private static final double kD = 0.0;
-    private static final double kDt = 0.02;
-
-    private static final double kMaxVelocity = 1.0;
-    private static final double kMaxAcceleration = 2.0;
-
-    private static final double kMotorVoltageLimit = .1;
+    private double mGoal = 0;
+    private double AUTO_THRESHOLD = 1;
+    private double AUTO_THRESHOLD_FINE = 15;
+    private boolean mAutoEnabled = false;
 
     //max up is 36.4
     //min down is 41.1
@@ -46,16 +44,13 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     private final static double SHOOT_SPEAKER_ANGLE = 0;
 
     /** angle where shooter is able to shoot at the amp */
-    private final static double SHOOT_AMP_ANGLE = 0;
+    private final static double SHOOT_AMP_ANGLE = 378;
 
     /** angle where shooter is positioned so we can go under the chain */
-    private final static double UNDER_CHAIN_ANGLE = 0;
+    private final static double UNDER_CHAIN_ANGLE = 411;
 
     /** angle where shooter is in the correct location to load from source*/
     private final static double LOAD_SOURCE_HEIGHT = 0;
-
-    /** distance away from expected location that we still concider good */
-    private final static double SHOOTER_ANGLE_THRESHOLD = 0.4;
 
     public enum ShooterPosition {
         SHOOT_SPEAKER,
@@ -64,76 +59,57 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
         HEIGHT_CHAIN
     };
 
+    enum State {
+        STOPPED,
+        RAISING,
+        LOWERING,
+    }
+    private State mCurrentState = State.STOPPED;
+
     private ShooterPosition m_currentTargetPosition = ShooterPosition.SHOOT_SPEAKER;
 
 
-    private static final ProfiledPIDController pidController = new ProfiledPIDController(
-            kP, kI, kD,
-            new TrapezoidProfile.Constraints(
-                    kMaxVelocity,
-                    kMaxAcceleration),
-            kDt);
-
     
     public ShooterAngleSubsystem() {
-
-        super(pidController, 0);
-
-        pidController.setTolerance(SHOOTER_ANGLE_THRESHOLD);
-
-        
         mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
-    
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
-        m_sbTab = Shuffleboard.getTab("Shooter (Debug)");
 
-        m_sbTab.addDouble("Encoder", new DoubleSupplier() {
+        m_sbTab = Shuffleboard.getTab("Shooter Angle (Debug)");
+
+        m_sbTab.addDouble("Linear Actuator Encoder", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return mShooterAngleEncoder.getAbsolutePosition() *100;
+                return getMeasurement();
             };
         });
 
-        m_sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
+        m_sbTab.addBoolean("Linear Actuator auto Enabled", new BooleanSupplier() {
             @Override
             public boolean getAsBoolean() {
-                return isEnabled();
+                return mAutoEnabled;
             };
         });
 
-        m_sbTab.addString("Target position", new Supplier<String>() {
+        m_sbTab.addDouble("Linear Actuator goal", new DoubleSupplier() {
+            @Override
+            public double getAsDouble() {
+                return mGoal;
+            };
+        });
+
+        m_sbTab.addString("Linear Actuator state", new Supplier<String>() {
             @Override
             public String get() {
-                return m_currentTargetPosition.toString();
+                return mCurrentState.name();
             }
         });
-        
-        m_sbTab.addDouble("PID goal", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_controller.getGoal().position;
-            };
-        });
 
-        m_sbTab.addDouble("PID output", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mLinearActuatorMotor.getMotorOutputVoltage();
-            };
-        });
-
-        m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_shooterAngle;
-            };
-        });
 
         new Thread("shooterAngleEncoder") {
             public void run() {
                 while (true) {
-                    m_shooterAngle = mShooterAngleEncoder.getAbsolutePosition() * 100d;
+                    m_shooterAngle = mShooterAngleEncoder.getAbsolutePosition() * 1000;
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
@@ -147,22 +123,19 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     @Override
     public void periodic() {
         super.periodic();
-
-        if (pidController.atGoal()) {
+        if (mAutoEnabled && atGoal()) {
             stopMotor();
-            disable();
+            mAutoEnabled = false;
         }
 
-        if(m_shooterAngle == 0){
-            stopMotor();
-            disable();
-            System.out.println("SHOOTER ANGLE ENCODER MISSING  FIX ME  HEEEEELLLLLPPPPPPPP");
-        }
+        if (mAutoEnabled) {
+            doAutoMovement();
+        }        
     }
 
     public void stopMotor() {
         // Stops shooter motor
-        disable();
+        
         mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, 0);
         System.out.println("stopped");
     }
@@ -170,74 +143,97 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     public void raiseShooter() {
         // Moves the shooter
         System.out.println("called raise shooter");
-        disable();
         
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, shooterSpeedUp);
+        
+        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP);
         System.out.println("raising");
     }
 
     public void lowerShooter() {
         // Moves the shooter down
         System.out.println("called lower shooter");
-        disable();
+        
 
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, shooterSpeedDown);
+        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
         System.out.println("lowering");
     }
 
-	@Override
-	protected void useOutput(double output, edu.wpi.first.math.trajectory.TrapezoidProfile.State setpoint) {
-		// Calculate the feedforward from the sepoint
-        // double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-        // m_feedforwardVal = feedforward;
-        // double newOutput = output + feedforward;
-        // Add the feedforward to the PID output to get the motor output
-
-        // clamp the output to a sane range
-        double val;
-        if (output < 0) {
-            val = Math.max(-kMotorVoltageLimit, output);
-        } else {
-            val = Math.min(kMotorVoltageLimit, output);
-        }
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, val);
-    }
-
-	@Override
+	
 	protected double getMeasurement() {
 		return m_shooterAngle;
     }
 
 
-    public void setShooterPosition(ShooterPosition position) {
-        double angle = 0;
+    public boolean isInSpeakerLocation() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER;
+    //    return true;
+    }
+
+    public boolean isInAmpLocation() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_AMP;
+        // return true;
+    }
+
+    public boolean isInChainLocation() {
+        return m_currentTargetPosition == ShooterPosition.HEIGHT_CHAIN;
+        // return true;
+    }
+
+    public boolean isInSourceLocation() {
+        return m_currentTargetPosition == ShooterPosition.LOAD_SOURCE;
+        // return true;
+    }
+
+    public void setPosition(ShooterPosition position) {
         m_currentTargetPosition = position;
-        switch(position){
+        switch (m_currentTargetPosition) {
+            case SHOOT_SPEAKER:
+            mGoal = SHOOT_SPEAKER_ANGLE;
+                break;
             case HEIGHT_CHAIN:
-                angle = UNDER_CHAIN_ANGLE;
+            mGoal = UNDER_CHAIN_ANGLE;
                 break;
             case LOAD_SOURCE:
-                angle = LOAD_SOURCE_HEIGHT;
+            mGoal = LOAD_SOURCE_HEIGHT;
                 break;
             case SHOOT_AMP:
-                angle = SHOOT_AMP_ANGLE;
-                break;
-            case SHOOT_SPEAKER:
-                angle = SHOOT_SPEAKER_ANGLE;
+            mGoal = SHOOT_AMP_ANGLE;
                 break;
         }
 
-        System.out.println("Shooter setting angle: " + angle);
-        this.m_controller.reset(getMeasurement());
-        pidController.setGoal(angle);
-        enable();
+        System.out.println("setting shooter angle: " + mGoal);
+        mAutoEnabled = true;
+        doAutoMovement();
     }
 
-    public boolean isInSpeakerLocation() {
-        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER && pidController.atGoal();
+    private boolean atGoal() {
+        return Math.abs(mGoal - getMeasurement()) < AUTO_THRESHOLD;
     }
 
-    public boolean shooterIsInAmpLocation() {
-        return m_currentTargetPosition == ShooterPosition.SHOOT_AMP && pidController.atGoal();
+    private void doAutoMovement() {
+        if (atGoal()) {
+            mAutoEnabled = false;
+            return;
+        }
+        if (getMeasurement() > mGoal) {
+            if(Math.abs(getMeasurement() - mGoal) < AUTO_THRESHOLD_FINE){
+                System.out.println("Speed up fine");
+                mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP_FINE);
+            } else {
+                System.out.println("Speed up");
+                mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP);
+            }
+            mCurrentState = State.RAISING;
+        }
+        else if (getMeasurement() < mGoal) {
+            if(Math.abs(getMeasurement() - mGoal) < AUTO_THRESHOLD_FINE){
+                System.out.println("Speed down fine");
+                 mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN_FINE);
+            } else {
+                System.out.println("Speed down");
+                mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
+            }
+            mCurrentState = State.LOWERING;
+        }
     }
 }

@@ -8,12 +8,12 @@ import frc.robot.RobotContainer;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
 import frc.robot.subsystems.ShooterSubsystem.OperatorEvent;
 
 public class ButtonBoardSubsystem extends SubsystemBase {
     private ClimberSubsystem climberSubsystem;
 
-    private ElevatorSubsystem elevatorSubsystem;
     private ShooterSubsystem shooterSubsystem;
 
     private double m_fwdRevJoystick;
@@ -46,24 +46,22 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ElevatorSubsystem elevatorSubsystem, ShooterSubsystem shooterSubsystem) {
+    public ButtonBoardSubsystem(ClimberSubsystem climberSubsystem, ShooterSubsystem shooterSubsystem) {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
         this.climberSubsystem = climberSubsystem;
-        this.elevatorSubsystem = elevatorSubsystem;
         this.shooterSubsystem = shooterSubsystem;
-
     }
     
 
     // Joystick #1 Buttons
 
     private JoystickButton lowerElevatorButton() {
-        return new JoystickButton(m_joystick2, 3);
+        return new JoystickButton(m_joystick2, 5);
     }
 
     private JoystickButton raiseElevatorButton() {
-        return new JoystickButton(m_joystick2, 5);
+        return new JoystickButton(m_joystick2, 3);
     }
 
     private JoystickButton raiseClimberButton() {
@@ -161,57 +159,87 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         );
 
         raiseElevatorButton().onTrue(
-            new InstantCommand(() -> elevatorSubsystem.lowerElevator())
+            new InstantCommand(() -> {
+                System.out.println("raiseElevatorButton Press");
+                shooterSubsystem.raiseElevator();
+            })
         );
 
         raiseElevatorButton().onFalse(
-            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+            new InstantCommand(() -> {
+                System.out.println("raiseElevatorButton Release");
+                shooterSubsystem.stopElevator();
+            })
         );
         
         lowerElevatorButton().onTrue(
-            new InstantCommand(() -> elevatorSubsystem.raiseElevator())
+            new InstantCommand(() -> {
+                System.out.println("lowerElevatorButton Press");
+                shooterSubsystem.lowerElevator();
+            })
         );
 
         lowerElevatorButton().onFalse(
-            new InstantCommand(() -> elevatorSubsystem.stopMotor())
+            new InstantCommand(() -> {
+                System.out.println("lowerElevatorButton Release");
+                shooterSubsystem.stopElevator();
+            })
         );
 
         raiseClimberButton().onTrue(
-            new InstantCommand(() -> climberSubsystem.raiseMotors())
+            new InstantCommand(() -> {
+                System.out.println("raiseClimberButton Press");
+                climberSubsystem.raiseMotors();
+            })
         );
 
         raiseClimberButton().onFalse(
-            new InstantCommand(() -> climberSubsystem.stopMotors())
+            new InstantCommand(() -> {
+                System.out.println("raiseClimberButton Release");
+                climberSubsystem.stopMotors();
+            })
         );
 
         lowerClimberButton().onTrue(
-            new InstantCommand(() -> climberSubsystem.lowerMotors())
+            new InstantCommand(() -> {
+                System.out.println("lowerClimberButton Press");
+                climberSubsystem.lowerMotors();
+            })
         );
 
         lowerClimberButton().onFalse(
-            new InstantCommand(() -> climberSubsystem.stopMotors())
+            new InstantCommand(() -> {
+                climberSubsystem.stopMotors();
+                System.out.println("lowerClimberButton Release");
+            })
         );  
 
         raiseLinearActuatorButton().onTrue(
             new InstantCommand(() -> {
-                System.out.println("currently raising");
+                System.out.println("raiseLinearActuatorButton Press");
                 shooterSubsystem.raiseLinearActuator();
             })
         );
 
         raiseLinearActuatorButton().onFalse(
-            new InstantCommand(() -> shooterSubsystem.stopLinearActuator())
+            new InstantCommand(() -> {
+                System.out.println("raiseLinearActuatorButton Release");
+                shooterSubsystem.stopLinearActuator();
+            })
         );
 
         lowerLinearActuatorButton().onTrue(
             new InstantCommand(() -> {
-                System.out.println("currently lowering");
+                System.out.println("lowerLinearActuatorButton Press");
                 shooterSubsystem.lowerLinearActuator();
             })
         );
 
         lowerLinearActuatorButton().onFalse(
-            new InstantCommand(() -> shooterSubsystem.stopLinearActuator())
+            new InstantCommand(() -> {
+                System.out.println("lowerLinearActuatorButton Release");
+                shooterSubsystem.stopLinearActuator();
+            })
         );
 
         spitButton().onTrue(
@@ -235,6 +263,19 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })
         );
 
+        blank7().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("blank7 Pressed");
+                shooterSubsystem.setLinearActuatorPosition(ShooterPosition.SHOOT_AMP);
+            })
+        );
+        blank8().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("blank8 Pressed");
+                shooterSubsystem.setLinearActuatorPosition(ShooterPosition.HEIGHT_CHAIN);
+                
+            })
+        );
         // prepSpeakerButton().onFalse(
         //     new InstantCommand(() -> {
         //         System.out.println("Prep Speaker Button Released");
