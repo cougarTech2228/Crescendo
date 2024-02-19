@@ -24,10 +24,10 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     private static final double shooterSpeedDown = 1;
     private double m_shooterAngle;
 
-    private static final double kSVolts = 0;
-    private static final double kGVolts = 0;
-    private static final double kVVolt = 0;
-    private static final double kAVolt = 0;
+    // private static final double kSVolts = 0;
+    // private static final double kGVolts = 0;
+    // private static final double kVVolt = 0;
+    // private static final double kAVolt = 0;
 
     private static final double kP = 0.1;
     private static final double kI = 0.0;
@@ -43,16 +43,16 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
     //min down is 41.1
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double SHOOTER_SUBWOOFER_HIEGHT = 0;
+    private final static double SHOOT_SPEAKER_ANGLE = 0;
 
     /** angle where shooter is able to shoot at the amp */
-    private final static double SHOOTER_AMP_HEIGHT = 0;
+    private final static double SHOOT_AMP_ANGLE = 0;
 
     /** angle where shooter is positioned so we can go under the chain */
-    private final static double SHOOTER_CHAIN_HEIGHT = 0;
+    private final static double UNDER_CHAIN_ANGLE = 0;
 
     /** angle where shooter is in the correct location to load from source*/
-    private final static double SHOOTER_SOURCE_HEIGHT = 0;
+    private final static double LOAD_SOURCE_HEIGHT = 0;
 
     /** distance away from expected location that we still concider good */
     private final static double SHOOTER_ANGLE_THRESHOLD = 0.4;
@@ -208,4 +208,36 @@ public class ShooterAngleSubsystem extends ProfiledPIDSubsystem {
 		return m_shooterAngle;
     }
 
+
+    public void setShooterPosition(ShooterPosition position) {
+        double angle = 0;
+        m_currentTargetPosition = position;
+        switch(position){
+            case HEIGHT_CHAIN:
+                angle = UNDER_CHAIN_ANGLE;
+                break;
+            case LOAD_SOURCE:
+                angle = LOAD_SOURCE_HEIGHT;
+                break;
+            case SHOOT_AMP:
+                angle = SHOOT_AMP_ANGLE;
+                break;
+            case SHOOT_SPEAKER:
+                angle = SHOOT_SPEAKER_ANGLE;
+                break;
+        }
+
+        System.out.println("Shooter setting angle: " + angle);
+        this.m_controller.reset(getMeasurement());
+        pidController.setGoal(angle);
+        enable();
+    }
+
+    public boolean isInSpeakerLocation() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER && pidController.atGoal();
+    }
+
+    public boolean shooterIsInAmpLocation() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_AMP && pidController.atGoal();
+    }
 }

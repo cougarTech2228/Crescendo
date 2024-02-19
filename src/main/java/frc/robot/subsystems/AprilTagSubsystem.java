@@ -12,10 +12,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -60,37 +57,52 @@ public class AprilTagSubsystem extends SubsystemBase {
         return (estimatedPose.best.getX() < 4.0) || (estimatedPose.best.getX() > 12);
     }
 
+    Thread processingThread = new Thread("AprilTag Thread") {
+        @Override
+        public void run(){
+            System.out.println("AprilTag Processing Thread started");
+            while (true) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                PhotonPipelineResult  res = camera.getLatestResult();
+
+                if (res.hasTargets()) {
+                    // PhotonTrackedTarget bestTarget = res.getBestTarget();
+                    double imageCaptureTime = res.getTimestampSeconds();
+                    var estimatedPose = res.getMultiTagResult().estimatedPose;
+
+                    if (estimatedPose.isPresent && isSaneMeasurement(estimatedPose)) {
+                            Pose2d adjustedPose = new Pose3d(estimatedPose.best.getTranslation(),
+                                estimatedPose.best.getRotation()).toPose2d().transformBy(cameraOffsetTransform);
+
+                            drivebaseSubsystem.addVisionMeasurement(adjustedPose, imageCaptureTime);
+                            SmartDashboard.putBoolean("Is Using Vision", true);
+                            // System.out.println("adding measurement " + adjustedPose + ", error: " + estimatedPose.bestReprojErr);
+                    } else {
+                        SmartDashboard.putBoolean("Is Using Vision", false);
+                    }
+                    // } else if (bestTarget != null) {
+                    //     Transform3d camToTargetTrans = bestTarget.getBestCameraToTarget();
+                    //     //camToTargetTrans.plus( new Transform3d( cameraOffsetTransform.getTranslation(), new Rotation2d());
+                    //     camToTargetTrans = camToTargetTrans.plus(cameraOffsetTransform3d);
+                    //     Optional<Pose3d> tagPose = aprilTagFieldLayout.getTagPose(bestTarget.getFiducialId());
+                    //     if (tagPose.isPresent()) {
+                    //         Pose2d pose = tagPose.get().transformBy(camToTargetTrans).toPose2d();
+                    //         System.out.println("single vision mesaurement from tag " + bestTarget.getFiducialId() + ": " + pose.toString());
+                    //         drivebaseSubsystem.addVisionMeasurement(pose, imageCaptureTime);
+                    //     }
+                    // }
+                }
+            }
+        };
+    };
+
     @Override
     public void periodic() {
-        PhotonPipelineResult  res = camera.getLatestResult();
-        
-        if (res.hasTargets()) {
-            // PhotonTrackedTarget bestTarget = res.getBestTarget();
-            double imageCaptureTime = res.getTimestampSeconds();
-            var estimatedPose = res.getMultiTagResult().estimatedPose;
-            
-            if (estimatedPose.isPresent && isSaneMeasurement(estimatedPose)) {
-                    Pose2d adjustedPose = new Pose3d(estimatedPose.best.getTranslation(),
-                        estimatedPose.best.getRotation()).toPose2d().transformBy(cameraOffsetTransform);
-
-                    drivebaseSubsystem.addVisionMeasurement(adjustedPose, imageCaptureTime);
-                    SmartDashboard.putBoolean("Is Using Vision", true);
-                    // System.out.println("adding measurement " + adjustedPose + ", error: " + estimatedPose.bestReprojErr);
-            } else {
-                SmartDashboard.putBoolean("Is Using Vision", false);
-            }
-            // } else if (bestTarget != null) {
-            //     Transform3d camToTargetTrans = bestTarget.getBestCameraToTarget();
-            //     //camToTargetTrans.plus( new Transform3d( cameraOffsetTransform.getTranslation(), new Rotation2d());
-            //     camToTargetTrans = camToTargetTrans.plus(cameraOffsetTransform3d);
-            //     Optional<Pose3d> tagPose = aprilTagFieldLayout.getTagPose(bestTarget.getFiducialId());
-            //     if (tagPose.isPresent()) {
-            //         Pose2d pose = tagPose.get().transformBy(camToTargetTrans).toPose2d();
-            //         System.out.println("single vision mesaurement from tag " + bestTarget.getFiducialId() + ": " + pose.toString());
-            //         drivebaseSubsystem.addVisionMeasurement(pose, imageCaptureTime);
-            //     }
-            // }
-        }
     }
 
     public Pose2d getAmpPose() {

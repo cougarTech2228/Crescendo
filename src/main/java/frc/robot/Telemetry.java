@@ -34,7 +34,7 @@ public class Telemetry {
     public Telemetry(double maxSpeed) {
         MaxSpeed = maxSpeed;
         SignalLogger.setPath("");
-        SignalLogger.start();
+        // SignalLogger.start();
         logEntry = new DoubleArrayLogEntry(DataLogManager.getLog(), "odometry");
         odomEntry = new DoubleLogEntry(DataLogManager.getLog(), "odom period");
     }
@@ -115,7 +115,7 @@ public class Telemetry {
             m_moduleDirections[i].setAngle(state.ModuleStates[i].angle);
             m_moduleSpeeds[i].setLength(state.ModuleStates[i].speedMetersPerSecond / (2 * MaxSpeed));
 
-            SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
+            // SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
 
         long timestamp = (long)(Timer.getFPGATimestamp() * 1000000);

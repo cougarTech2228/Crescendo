@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -9,7 +8,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -54,9 +52,6 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        super.periodic();
-        // SmartDashboard.putBoolean("ClimberTopSensor", isClimberAtTop());
-        // SmartDashboard.putBoolean("ClimberBottomSensor", isClimberAtBottom());
         if (currentState == State.RAISING && isClimberAtTop()) {
             stopMotors();   
         }

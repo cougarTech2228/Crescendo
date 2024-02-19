@@ -13,14 +13,13 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
+import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
 
 public class ShooterSubsystem extends SubsystemBase {
 
@@ -71,11 +70,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
     private final static double BENDER_FEED_SPEED = -1.0;
-    private final static double LINEAR_ACTUATOR_RAISE_SPEED = 0.7;
-    private final static double LINEAR_ACTUATOR_LOWER_SPEED = -0.7;
-
-    
-
 
     public ShooterSubsystem() {
         mShooterFeedMotor = new TalonFX(Constants.kShooterFeedMotorId);
@@ -119,6 +113,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 return shooterState.name();
             }
         });
+
+        stateMachineThread.start();
     }   
     
     public void initStateMachine(boolean preloaded) {
@@ -138,120 +134,134 @@ public class ShooterSubsystem extends SubsystemBase {
         return m_isLoaded;
     }
 
+    private Thread stateMachineThread = new Thread("Shooter State Machine") {
+        @Override
+        public void run() {
+            System.out.println("Starting Shooter state machine thread");
+            while (true) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) { }
+
+                if(currentEvent == OperatorEvent.SPIT) {
+                    mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
+                    continue;
+                }
+
+                switch (shooterState) {
+                    case EMPTY:
+                        stopAllMotors();
+                        // TODO: if bender is not in default position, shooterState = ShooterState.SETBENDERTODEFAULTPOSITION;
+                        // else shooterState = ShooterState.
+                        if (isNoteAtBottom()) {
+                            changeState(ShooterState.ACQUIRINGBOTTOM);
+                        }
+                        break;
+                    case ACQUIRINGBOTTOM:
+                        acquiringBottom();
+                        if (isNoteAtMiddle()) {
+                            changeState(ShooterState.ACQUIRINGTOP);
+                        }
+                        break;
+                    case ACQUIRINGTOP:
+                        if (!isNoteAtMiddle()) {
+                            m_isLoaded = true;
+                            changeState(ShooterState.LOADED);
+                        }
+                        break;
+                    case LOADED:
+                        stopAllMotors();
+
+                        if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
+                            currentEvent = OperatorEvent.NONE;
+                            // ensure bender is out of the way
+                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+                            mShooterAngleSubsystem.setShooterPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
+                            changeState(ShooterState.FIRE_SPEAKER_PREP);
+                        }
+                        else if (currentEvent == OperatorEvent.PREP_AMP) {
+                            currentEvent = OperatorEvent.NONE;
+                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
+                            mShooterAngleSubsystem.setShooterPosition(ShooterPosition.SHOOT_AMP);
+                            changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
+                        }
+                        else if(currentEvent == OperatorEvent.PREP_SPEAKER){
+                            currentEvent = OperatorEvent.NONE;
+                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+                            mShooterAngleSubsystem.setShooterPosition(ShooterPosition.SHOOT_SPEAKER);
+                        }
+
+                        break;
+                    case FIRE_SPEAKER_PREP:
+                        mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
+                        // TODO: Make this if statement work
+                        if (flywheelIsAtShootingSpeed() &&
+                            mBenderAngleSubsystem.isInSpeakerLocation() &&
+                            mShooterAngleSubsystem.isInSpeakerLocation())
+                        {
+                            changeState(ShooterState.FIRE_SPEAKER);
+                            timeCheck = Timer.getFPGATimestamp();
+                        }
+                        break;
+                    case FIRE_SPEAKER:
+                        launchSpeaker();
+                        if (isShooterDelayExpired()) {
+                            m_isLoaded = false;
+                            changeState(ShooterState.EMPTY);
+                        }
+                        break;
+
+                    case BENDER_LOAD_INTERNAL_PREP:
+                        if (mBenderAngleSubsystem.isInInternalLoadingLocation()) {
+                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER);
+                        }
+                        break;
+                    case BENDER_LOAD_INTERNAL_LOAD_BENDER:
+                        mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED);
+                        mShooterBeltMotor.set(LOAD_SPEED_BELT);
+                        mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
+                        mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
+                        if (isNoteAtTop()) {
+                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE);
+                        }
+                        break;
+                    case BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE:
+                        if (!isNoteAtTop()) {
+                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
+                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOADED);
+                        }
+                        break;
+                    case BENDER_LOAD_INTERNAL_LOADED:
+                        mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                        mShooterBeltMotor.set(0);
+                        mShooterFeedMotor.set(0);
+                        mShooterFlywheelMotor.set(0);
+                        if(mBenderAngleSubsystem.isInAmpLocation() &&
+                           mShooterAngleSubsystem.shooterIsInAmpLocation()) {
+                            changeState(ShooterState.READY_FOR_FIRE_AMP);
+                        }
+                        break;
+                    case READY_FOR_FIRE_AMP:
+                        // If amp shooter button is pressed
+                        // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
+                        if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
+                            changeState(ShooterState.FIRE_AMP);
+                        }
+                        break;
+                    case FIRE_AMP:
+                        mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+                        if (isShooterDelayExpired()) {
+                            m_isLoaded = false;
+                            changeState(ShooterState.EMPTY);
+                        }
+                        break;
+                }
+            }
+        };
+    };
+
     @Override
     public void periodic() {
-        // TODO Auto-generated method stub
-        super.periodic();
-
-        // SmartDashboard.putNumber("Alt Encoder Velocity", mBenderEncoder.getVelocity());
-        // SmartDashboard.putNumber("Applied Output", mBenderMotor.getAppliedOutput());
-        if(currentEvent == OperatorEvent.SPIT) {
-            mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
-            return;
-        }
-        switch (shooterState) {
-            case EMPTY:
-                stopAllShooterMotors();
-                // TODO: if bender is not in default position, shooterState = ShooterState.SETBENDERTODEFAULTPOSITION;
-                // else shooterState = ShooterState.
-                if (isNoteAtBottom()) {
-                    changeState(ShooterState.ACQUIRINGBOTTOM);
-                }
-                break;
-            case ACQUIRINGBOTTOM:
-                acquiringBottom();
-                if (isNoteAtMiddle()) {
-                    changeState(ShooterState.ACQUIRINGTOP);
-                }
-                break;
-            case ACQUIRINGTOP:
-                if (!isNoteAtMiddle()) {
-                    m_isLoaded = true;
-                    changeState(ShooterState.LOADED);
-                }
-                break;
-            case LOADED:
-                stopAllShooterMotors();
-
-                if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
-                    currentEvent = OperatorEvent.NONE;
-                    // ensure bender is out of the way
-                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                    changeState(ShooterState.FIRE_SPEAKER_PREP);
-                }
-                else if (currentEvent == OperatorEvent.PREP_AMP) {
-                    currentEvent = OperatorEvent.NONE;
-                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
-                    changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
-                }
-                else if(currentEvent == OperatorEvent.PREP_SPEAKER){
-                    currentEvent = OperatorEvent.NONE;
-                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                    // changeState(ShooterState.FIRE_SPEAKER_PREP);
-                }
-
-                break;
-            case FIRE_SPEAKER_PREP:
-                mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
-                // TODO: Make this if statement work
-                if (flywheelIsAtShootingSpeed() && mBenderAngleSubsystem.benderIsInSpeakerLocation()) {
-                    changeState(ShooterState.FIRE_SPEAKER);
-                    timeCheck = Timer.getFPGATimestamp();
-                }
-                break;
-            case FIRE_SPEAKER:
-                launchSpeaker();
-                if (isShooterDelayExpired()) {
-                    m_isLoaded = false;
-                    changeState(ShooterState.EMPTY);
-                }
-                break;
-
-            case BENDER_LOAD_INTERNAL_PREP:
-                if (mBenderAngleSubsystem.benderIsInInternalLoadingLocation()) {
-                    changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER);
-                }
-                break;
-            case BENDER_LOAD_INTERNAL_LOAD_BENDER:
-                mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED); // "slow"
-                mShooterBeltMotor.set(LOAD_SPEED_BELT);
-                mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
-                mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
-                if (isNoteAtTop()) {
-                    changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE);
-                }
-                break;
-            case BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE:
-                if (!isNoteAtTop()) {
-                    mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
-                    changeState(ShooterState.BENDER_LOAD_INTERNAL_LOADED);
-                }
-                break;
-            case BENDER_LOAD_INTERNAL_LOADED:
-                mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
-                mShooterBeltMotor.set(0);
-                mShooterFeedMotor.set(0);
-                mShooterFlywheelMotor.set(0);
-                if(mBenderAngleSubsystem.benderIsInAmpLocation()) {
-                    changeState(ShooterState.READY_FOR_FIRE_AMP);
-                }
-                break;
-            case READY_FOR_FIRE_AMP:
-                // If amp shooter button is pressed
-                // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
-                if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
-                    changeState(ShooterState.FIRE_AMP);
-                }
-                break;
-            case FIRE_AMP:
-                mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
-                if (isShooterDelayExpired()) {
-                    m_isLoaded = false;
-                    changeState(ShooterState.EMPTY);
-                }
-                break;
-        }
-        
     }
 
     /**
@@ -332,11 +342,12 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterBeltMotor.set(SPEAKER_SHOOT_BELT_SPEED);
     }
 
-    private void stopAllShooterMotors() {
+    private void stopAllMotors() {
         mGroundFeedMotor.set(0);
         mShooterBeltMotor.set(0);
         mShooterFeedMotor.set(0);
         mShooterFlywheelMotor.set(0);
+        mBenderFeedMotor.set(TalonSRXControlMode.PercentOutput, 0);
     }
 
     /**
@@ -345,8 +356,4 @@ public class ShooterSubsystem extends SubsystemBase {
     public void operatorEvent(OperatorEvent event) {
         currentEvent = event;
     }
-
-    // public void setBender(BenderAngleSubsystem.BenderPosition position) {
-    //     mBenderAngleSubsystem.setBenderPosition(position);
-    // }
 };

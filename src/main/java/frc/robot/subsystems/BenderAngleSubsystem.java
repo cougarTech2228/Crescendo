@@ -148,7 +148,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
                 return m_currentTargetPosition.toString();
             }
         });
-        
+
         m_sbTab.addDouble("PID goal", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
@@ -254,7 +254,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
                 break;
             case SHOOT_SPEAKER:
                 angle = BENDER_SPEAKER_LOCATION;
-                break;            
+                break;
         }
 
         if (angle > m_benderAngle) {
@@ -307,10 +307,10 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     }
 
         /**
-     *  @return true if the bender is flipped back out of the way so 
+     *  @return true if the bender is flipped back out of the way so
      *  that a note can be shot at the speaker without hitting the bender
      */
-    public boolean benderIsInSpeakerLocation() {
+    public boolean isInSpeakerLocation() {
         return m_currentTargetPosition == BenderPosition.SHOOT_SPEAKER && atGoal();
     }
 
@@ -318,14 +318,14 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
      * @return true if the bender is flipped forward so that a note can be fed from
      * the internal chamber into the bender
      */
-    public boolean benderIsInInternalLoadingLocation() {
+    public boolean isInInternalLoadingLocation() {
         return m_currentTargetPosition == BenderPosition.LOAD_INTERNAL && atGoal();
     }
 
     /**
      * @return true if the bender is is the correct location for firing into the amp
      */
-    public boolean benderIsInAmpLocation() {
+    public boolean isInAmpLocation() {
         return m_currentTargetPosition == BenderPosition.SHOOT_AMP && atGoal();
     }
 }
