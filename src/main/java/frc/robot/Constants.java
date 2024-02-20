@@ -13,11 +13,10 @@ public class Constants
     public static final int kClimberMotorId = 10; // Falcon 
     public static final int kElevatorMotorId = 11; // Falcon 
     public static final int kGroundFeedMotorId = 9; // Spark Max
-    public static final int kBenderTiltMotorId = 7; // Spark Max
+    public static final int kBenderTiltMotorId = 7; // Talon SRX
     public static final int kBenderFeedMotorId = 15; // Talon SRX
 
-    public static final int kLinearActuatorLeftMotorId = 14; // Talon SRX
-    public static final int kLinearActuatorRightMotorId = 13; // Talon SRX
+    public static final int kLinearActuatorMotorId = 14; // Talon SRX
 
     // Sensors
     public static final int kGroundFeedSensorId = 0; // Is suppposed to be 0 don't change it

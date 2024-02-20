@@ -41,9 +41,9 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     //min down is 41.1
 
     /** angle where shooter is able to shoot at the speaker */
-    //private final static double SHOOT_SPEAKER_SIDE_ANGLE = 395;
-    //private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
-    private final static double SHOOT_SPEAKER_ANGLE = 375;
+    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 395;
+    private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
+    //private final static double SHOOT_SPEAKER_ANGLE = 375;
 
     /** angle where shooter is able to shoot at the amp */
     private final static double SHOOT_AMP_ANGLE = 378;
@@ -55,7 +55,8 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     private final static double LOAD_SOURCE_HEIGHT = 0;
 
     public enum ShooterPosition {
-        SHOOT_SPEAKER,
+        SHOOT_SPEAKER_SIDE,
+        SHOOT_SPEAKER_FRONT,
         SHOOT_AMP,
         LOAD_SOURCE,
         HEIGHT_CHAIN
@@ -68,12 +69,13 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     }
     private State mCurrentState = State.STOPPED;
 
-    private ShooterPosition m_currentTargetPosition = ShooterPosition.SHOOT_SPEAKER;
+    private ShooterPosition m_currentTargetPosition = ShooterPosition.SHOOT_SPEAKER_FRONT;
+    // TODO make it so we can input where the shooter position is instead of being at front always
 
 
     
     public ShooterAngleSubsystem() {
-        mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorLeftMotorId);
+        mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorMotorId);
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
@@ -166,10 +168,15 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     }
 
 
-    public boolean isInSpeakerLocation() {
-        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER;
+    public boolean isInSpeakerLocation_front() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER_FRONT;
     //    return true;
     }
+    public boolean isInSpeakerLocation_side() {
+        return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER_SIDE;
+    //    return true;
+    }
+
 
     public boolean isInAmpLocation() {
         return m_currentTargetPosition == ShooterPosition.SHOOT_AMP;
@@ -189,8 +196,11 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     public void setPosition(ShooterPosition position) {
         m_currentTargetPosition = position;
         switch (m_currentTargetPosition) {
-            case SHOOT_SPEAKER:
-            mGoal = SHOOT_SPEAKER_ANGLE;
+            case SHOOT_SPEAKER_FRONT:
+            mGoal = SHOOT_SPEAKER_FRONT_ANGLE;
+                break;
+            case SHOOT_SPEAKER_SIDE:
+            mGoal = SHOOT_SPEAKER_SIDE_ANGLE;
                 break;
             case HEIGHT_CHAIN:
             mGoal = UNDER_CHAIN_ANGLE;

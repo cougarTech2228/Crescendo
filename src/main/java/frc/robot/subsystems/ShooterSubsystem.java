@@ -56,7 +56,8 @@ public class ShooterSubsystem extends SubsystemBase {
     public enum OperatorEvent {
         NONE,
         PREP_AMP,
-        PREP_SPEAKER,
+        PREP_SPEAKER_FRONT,
+        PREP_SPEAKER_SIDE,
         FIRE_SPEAKER,
         FIRE_AMP,
         SPIT
@@ -202,7 +203,7 @@ public class ShooterSubsystem extends SubsystemBase {
                             currentEvent = OperatorEvent.NONE;
                             // ensure bender is out of the way
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            mShooterAngleSubsystem.setPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
+                            //mShooterAngleSubsystem.setPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
                             changeState(ShooterState.FIRE_SPEAKER_PREP);
                         }
                         else if (currentEvent == OperatorEvent.PREP_AMP) {
@@ -211,10 +212,15 @@ public class ShooterSubsystem extends SubsystemBase {
                             mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_AMP);
                             changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
                         }
-                        else if(currentEvent == OperatorEvent.PREP_SPEAKER){
+                        else if(currentEvent == OperatorEvent.PREP_SPEAKER_FRONT){
                             currentEvent = OperatorEvent.NONE;
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER);
+                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_FRONT);
+                        }
+                        else if(currentEvent == OperatorEvent.PREP_SPEAKER_SIDE){
+                            currentEvent = OperatorEvent.NONE;
+                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_SIDE);
                         }
 
                         break;
@@ -223,7 +229,7 @@ public class ShooterSubsystem extends SubsystemBase {
                         // TODO: Make this if statement work
                         if (flywheelIsAtShootingSpeed() &&
                             mBenderAngleSubsystem.isInSpeakerLocation() &&
-                            mShooterAngleSubsystem.isInSpeakerLocation())
+                            (mShooterAngleSubsystem.isInSpeakerLocation_front() || mShooterAngleSubsystem.isInSpeakerLocation_side()))
                         {
                             changeState(ShooterState.FIRE_SPEAKER);
                             timeCheck = Timer.getFPGATimestamp();

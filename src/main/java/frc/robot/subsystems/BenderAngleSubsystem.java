@@ -65,7 +65,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     private static final double kMaxVelocity = 10.0;
     private static final double kMaxAcceleration = 2.0;
 
-    private static final double kMotorVoltageLimit = 3;
+    private static final double kMotorVoltageLimit = 5;
 
     private static final double ANGLE_MIN = 5;
     private static final double ANGLE_MAX = 48;
@@ -162,7 +162,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         m_sbTab.addDouble("PID output", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return mBenderTiltMotor.getMotorOutputVoltage(); //TODO
+                return mBenderTiltMotor.getMotorOutputVoltage();
             };
         });
 
@@ -238,7 +238,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         if (m_benderState != BenderState.stopped) {
             System.out.println("stopping elevator");
             m_benderState = BenderState.stopped;
-            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0); //TODO
+            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0);
         }
     }
 
@@ -301,8 +301,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, newOutput);
         }
-        //mBenderTiltMotor.setVoltage(val); HELP
-        //TODO
+        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -val/12);
     }
 
     @Override

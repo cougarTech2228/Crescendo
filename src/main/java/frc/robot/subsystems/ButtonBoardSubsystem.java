@@ -91,11 +91,11 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     // Joystick #2 Buttons
     
 
-    private JoystickButton prepSpeakerButton() {
+    private JoystickButton prepSpeakerFrontButton() {
         return new JoystickButton(m_joystick1, 1);
     }
 
-    private JoystickButton shootSpeakerButton() {
+    private JoystickButton prepSpeakerSideButton() {
         return new JoystickButton(m_joystick1, 2);
     }
 
@@ -103,7 +103,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         return new JoystickButton(m_joystick1, 3);
     }
 
-    private JoystickButton shootAmpButton() {
+    private JoystickButton shootButton() {
         return new JoystickButton(m_joystick1, 4);
     }
 
@@ -256,10 +256,10 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })  
         );
 
-        prepSpeakerButton().onTrue(
+        prepSpeakerFrontButton().onTrue(
             new InstantCommand(() -> {
-                System.out.println("Prep Speaker Button Pressed");
-                shooterSubsystem.operatorEvent(OperatorEvent.PREP_SPEAKER);
+                System.out.println("Prep Speaker Front Button Pressed");
+                shooterSubsystem.operatorEvent(OperatorEvent.PREP_SPEAKER_FRONT);
             })
         );
 
@@ -276,21 +276,15 @@ public class ButtonBoardSubsystem extends SubsystemBase {
                 
             })
         );
-        // prepSpeakerButton().onFalse(
-        //     new InstantCommand(() -> {
-        //         System.out.println("Prep Speaker Button Released");
-        //         shooterSubsystem.operatorEvent(OperatorEvent.NONE);
-        //     })
-        // );
 
-        shootSpeakerButton().onTrue(
+        shootButton().onTrue(
             new InstantCommand(() -> {
-                System.out.println("Shoot Speaker Button Pressed");
+                System.out.println("Shoot Button Pressed");
                 shooterSubsystem.operatorEvent(OperatorEvent.FIRE_SPEAKER);
             })
         );
 
-        shootSpeakerButton().onFalse(
+        shootButton().onFalse(
             new InstantCommand(() -> {
                 System.out.println("Shoot Speaker Button Realeased");
                 shooterSubsystem.operatorEvent(OperatorEvent.NONE);
@@ -311,19 +305,20 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })
         );
 
-        shootAmpButton().onTrue(
+        prepSpeakerSideButton().onTrue(
             new InstantCommand(() -> {
                 System.out.println("Shoot Amp Button Pressed");
-                shooterSubsystem.operatorEvent(OperatorEvent.FIRE_AMP);
+                shooterSubsystem.operatorEvent(OperatorEvent.PREP_SPEAKER_SIDE);
             })
         );
 
-        shootAmpButton().onFalse(
+        prepSpeakerSideButton().onFalse(
             new InstantCommand(() -> {
                 System.out.println("Shoot Amp Button Released");
                 shooterSubsystem.operatorEvent(OperatorEvent.NONE);
             })
         );
+
         spitButton().onTrue(
             new InstantCommand(() -> {
                 System.out.println("Spit Button Pressed");
