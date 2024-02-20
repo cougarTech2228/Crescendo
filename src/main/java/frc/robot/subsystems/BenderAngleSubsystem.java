@@ -4,24 +4,18 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkBase.IdleMode;
-
-import edu.wpi.first.math.controller.ElevatorFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 
-public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
+public class BenderAngleSubsystem extends PIDSubsystem {
 
     public enum BenderPosition {
         SHOOT_SPEAKER,
@@ -34,38 +28,20 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     private TalonSRX mBenderTiltMotor;
     private BenderState m_benderState = BenderState.stopped;
     private DutyCycleEncoder m_benderAngleEncoder;
-    private double m_feedforwardVal = 0;
 
     private double m_benderAngle;
     private BenderPosition m_currentTargetPosition = BenderPosition.SHOOT_SPEAKER;
 
-    // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/tuning-vertical-arm.html
-    // Steps for tuning the feedforward values Kg and Kv (leave others at 0)
-    // 1. Start by setting Kg and Kv to zero.
-    // 2. Increase Kg until the arm can hold its position with as little
-    // movement as possible. If the arm moves in the opposite direction,
-    // decrease until it remains stationary. You will have to zero in on
-    // Kg precisely (at least four decimal places).
-    // 3. Increase the velocity feedforward gain Kv until the arm tracks
-    // the setpoint during smooth, slow motion. If the arm overshoots,
-    // reduce the gain. Note that the arm may "lag" the commanded motion,
-    // this is normal, and is fine so long as it moves the correct amount
-    // in total.
-
-    private static final double kSVolts = 0;
-    private static final double kGVolts = 0;
-    private static final double kVVolt = 0;
-    private static final double kAVolt = 0;
-
-    private static final double kP = 1.5;
+    // max error ~= 30
+    // 30 * 0.033 == 1 (100% at max error)
+    private static final double kP = 0.03;
     private static final double kI = 0.0;
     private static final double kD = 0.0;
     private static final double kDt = 0.02;
 
-    private static final double kMaxVelocity = 10.0;
-    private static final double kMaxAcceleration = 2.0;
+    private static final double kMotorVoltageLimit = 0.1; // TUNE the loop so this can be 1
 
-    private static final double kMotorVoltageLimit = 5;
+    private static final double kIZone = 5;
 
     private static final double ANGLE_MIN = 5;
     private static final double ANGLE_MAX = 48;
@@ -88,16 +64,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 0.4;
 
-    private static final ProfiledPIDController pidController = new ProfiledPIDController(
-            kP, kI, kD,
-            new TrapezoidProfile.Constraints(
-                    kMaxVelocity,
-                    kMaxAcceleration),
-            kDt);
-
-    private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(
-            kSVolts, kGVolts,
-            kVVolt, kAVolt);
+    private static final PIDController pidController = new PIDController(kP, kI, kD,kDt);
 
     private enum BenderState {
         stopped,
@@ -109,6 +76,8 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         super(pidController, 0);
 
         pidController.setTolerance(BENDER_ANGLE_THRESHOLD);
+        pidController.setIZone(kIZone);
+        pidController.setIntegratorRange(ANGLE_MIN, ANGLE_MAX);
 
         mBenderTiltMotor = new TalonSRX(Constants.kBenderTiltMotorId);
         m_benderAngleEncoder = new DutyCycleEncoder(Constants.kBenderAngleEncoderPin);
@@ -155,7 +124,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         m_sbTab.addDouble("PID goal", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return m_controller.getGoal().position;
+                return m_controller.getSetpoint();
             };
         });
 
@@ -173,12 +142,8 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
             };
         });
 
-        // m_sbTab.addDouble("FF:", new DoubleSupplier() {
-        //     @Override
-        //     public double getAsDouble() {
-        //         return m_feedforwardVal;
-        //     };
-        // });
+        m_sbTab.add(pidController);
+
         new Thread("benderAngleEncoder") {
             public void run() {
                 while (true) {
@@ -193,50 +158,35 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         }.start();
     }
 
+    private boolean isDisabled = DriverStation.isDisabled();
     @Override
     public void periodic() {
         super.periodic();
 
-        // // Boundary check the distance sensor's range values
-        // if (m_benderAngle > ANGLE_MAX) {
-        //     System.out.println("Bender angle sensor exceeded max range limit");
-        //     m_benderAngle = ANGLE_MAX;
-        // } else if (m_benderAngle < ANGLE_MIN) {
-        //     System.out.println("Bender angle sensor exceeded min range limit");
-        //     m_benderAngle = ANGLE_MIN;
-        // }
-
-        if (DriverStation.isDisabled()) {
-            pidController.setGoal(getMeasurement());
-            disable();
-            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0);
-            //mBenderTiltMotor.setIdleMode(IdleMode.kCoast);
-            return;
+        // only send these commands on change
+        if (DriverStation.isDisabled() != isDisabled) {
+            isDisabled = DriverStation.isDisabled();
+            if (isDisabled) {
+                mBenderTiltMotor.setNeutralMode(NeutralMode.Coast);
+            } else {
+                mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
+            }
         }
 
-        // if (isBenderUpperLimitReached() && (m_benderState == BenderState.raising)) {
-        //     System.out.println("Bender Upper Limit Reached");
-        //     disable();
-        //     stopBender();
-        // } else if (isBenderLowerLimitReached() && (m_benderState == BenderState.lowering)) {
-        //     System.out.println("Bender Lower Limit Reached");
-        //     disable();
-        //     stopBender();
-        // }
-
-        if (pidController.atGoal()) {
-            stopBender();
+        if (isDisabled) {
             disable();
+            stopBender();
+            return;
         }
     }
 
     private boolean atGoal() {
-        return pidController.atGoal();
+        return pidController.atSetpoint();
     }
 
     private void stopBender() {
         if (m_benderState != BenderState.stopped) {
-            System.out.println("stopping elevator");
+            System.out.println("stopping bender");
             m_benderState = BenderState.stopped;
             mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0);
         }
@@ -269,8 +219,8 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         }
 
         System.out.println("setting angle: " + angle);
-        this.m_controller.reset(getMeasurement());
-        pidController.setGoal(angle);
+        this.m_controller.reset();
+        pidController.setSetpoint(angle);
         enable();
     }
 
@@ -282,26 +232,16 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         return m_benderAngle < ANGLE_MIN;
     }
 
-    private boolean isStopped() {
-        return (m_benderState == BenderState.stopped);
-    }
-
     @Override
-    public void useOutput(double output, TrapezoidProfile.State setpoint) {
-        // Calculate the feedforward from the sepoint
-        double feedforward = m_feedforward.calculate(setpoint.position, setpoint.velocity);
-        m_feedforwardVal = feedforward;
-        double newOutput = output + feedforward;
-        // Add the feedforward to the PID output to get the motor output
-
+    public void useOutput(double output, double setpoint) {
         // clamp the output to a sane range
         double val;
-        if (newOutput < 0) {
-            val = Math.max(-kMotorVoltageLimit, newOutput);
+        if (output < 0) {
+            val = Math.max(-kMotorVoltageLimit, output);
         } else {
-            val = Math.min(kMotorVoltageLimit, newOutput);
+            val = Math.min(kMotorVoltageLimit, output);
         }
-        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -val/12);
+        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, val);
     }
 
     @Override
@@ -309,7 +249,7 @@ public class BenderAngleSubsystem extends ProfiledPIDSubsystem {
         return m_benderAngle;
     }
 
-        /**
+    /**
      *  @return true if the bender is flipped back out of the way so
      *  that a note can be shot at the speaker without hitting the bender
      */
