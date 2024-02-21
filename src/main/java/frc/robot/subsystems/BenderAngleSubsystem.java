@@ -62,7 +62,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 0.6;
 
-    private static final PIDController pidController = new PIDController(kP, kI, kD,kDt);
+    private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
 
     private enum BenderState {
         stopped,

@@ -4,25 +4,41 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-public class ElevatorSubsystem extends SubsystemBase {
+public class ElevatorSubsystem extends PIDSubsystem {
     
     private static final double ELEVATOR_HEIGHT_AMP = 65;
     private static final double ELEVATOR_HEIGHT_HOME = 20;
 
+    private static final double ELEVATOR_THRESHOLD = 0.5; //TODO
+
+    private static final double kP = 0.025;
+    private static final double kI = 0.0;
+    private static final double kD = 0.0001;
+    private static final double kDt = 0.02;
+
+    private static final double kMotorVoltageLimit = 0.7;
+
+    private static final double kIZone = 5;
 
 
     private double encoderZeroValue = 0;
@@ -41,6 +57,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     private double mRequestedPosition = 0;
     private boolean mIsZeroed = false;
 
+
     enum State {
         STOPPED,
         RAISING,
@@ -53,14 +70,13 @@ public class ElevatorSubsystem extends SubsystemBase {
         AMP
     }
     private Position mCurrentPosition = Position.HOME;
-
-    private double mGoal = 0;
-    private double AUTO_THRESHOLD = 1;
-    private double AUTO_THRESHOLD_FINE = 10;
-    private boolean mAutoEnabled = false;
+    
+    private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
 
     public ElevatorSubsystem() {
-        
+        super(pidController, 0);
+
+        pidController.setTolerance(ELEVATOR_THRESHOLD);
 
         mElevatorMotor = new TalonFX(Constants.kElevatorMotorId);
         mElevatorMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -68,23 +84,31 @@ public class ElevatorSubsystem extends SubsystemBase {
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
         ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
-        sbTab.addDouble("Elevator Encoder", new DoubleSupplier() {
+        sbTab.addString("Target position", new Supplier<String>() {
             @Override
-            public double getAsDouble() {
-                return mCurrentMeasurement;
-            };
+            public String get() {
+                return mCurrentPosition.toString();
+            }
         });
-        sbTab.addDouble("Elevator Offset", new DoubleSupplier() {
+
+        sbTab.addDouble("PID goal", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return encoderZeroValue;
+                return m_controller.getSetpoint();
             };
         });
 
-        sbTab.addDouble("Elevator Requested Position", new DoubleSupplier() {
+        sbTab.addDouble("PID output", new DoubleSupplier() {
             @Override
             public double getAsDouble() {
-                return mRequestedPosition;
+                return mElevatorMotor.getMotorVoltage().getValue();
+            };
+        });
+
+        sbTab.addDouble("Current Angle:", new DoubleSupplier() {
+            @Override
+            public double getAsDouble() {
+                return mCurrentMeasurement;
             };
         });
 
@@ -102,52 +126,29 @@ public class ElevatorSubsystem extends SubsystemBase {
             };
         });
 
-        sbTab.addBoolean("Elevator auto Enabled", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return mAutoEnabled;
-            };
-        });
-
-        sbTab.addDouble("Elevator goal", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mGoal;
-            };
-        });
         sbTab.addString("Elevator state", new Supplier<String>() {
             @Override
             public String get() {
                 return mCurrentState.name();
             }
         });
+
+        sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
+            @Override
+            public boolean getAsBoolean() {
+                return isEnabled();
+            };
+        });
     }
 
+    private boolean isDisabled = DriverStation.isDisabled();
     @Override
     public void periodic() {
         super.periodic();
 
-        mCurrentMeasurement = mElevatorMotor.getRotorPosition().refresh().getValue();
-
         if (isElevatorAtBottom()) {
             encoderZeroValue = mElevatorMotor.getRotorPosition().getValue();
             mIsZeroed = true;
-        }
-    
-        if(mCurrentState == State.RAISING && isElevatorAtTop()) {
-            stopMotor();
-            mAutoEnabled = false;
-            mCurrentState = State.STOPPED;
-        }
-        else if(mCurrentState == State.LOWERING && isElevatorAtBottom()) {
-            stopMotor();
-            mAutoEnabled = false;
-            mCurrentState = State.STOPPED;
-        }
-
-        if (mAutoEnabled && atGoal()) {
-            stopMotor();
-            mAutoEnabled = false;
         }
 
         if (!mIsZeroed) {
@@ -156,10 +157,35 @@ public class ElevatorSubsystem extends SubsystemBase {
             return;
         }
 
-        if (mAutoEnabled) {
-            doAutoMovement();
+        if (DriverStation.isDisabled() != isDisabled) {
+            isDisabled = DriverStation.isDisabled();
+            if (isDisabled) {
+                mElevatorMotor.setNeutralMode(NeutralModeValue.Coast);
+            } else {
+                mElevatorMotor.setNeutralMode(NeutralModeValue.Brake);
+            }
+        }
+
+        if (isDisabled) {
+            disable();
+            stopMotor();
+            return;
+        }
+
+        mCurrentMeasurement = mElevatorMotor.getRotorPosition().refresh().getValue();
+    
+        if(mCurrentState == State.RAISING && isElevatorAtTop()) {
+            stopMotor();
+            mCurrentState = State.STOPPED;
+        }
+        else if(mCurrentState == State.LOWERING && isElevatorAtBottom()) {
+            stopMotor();
+            mCurrentState = State.STOPPED;
+            mCurrentPosition = Position.HOME;
         }
     }
+
+    
 
     public boolean isElevatorAtBottom() {
         // Returns a boolean, opposite of elevator sensor.get
@@ -206,7 +232,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public boolean isAtAmp() {
-        return (mAutoEnabled == false && mCurrentPosition == Position.AMP);
+        return mCurrentPosition == Position.AMP && atGoal();
     }
 
     public boolean isAtHome() {
@@ -214,65 +240,47 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     private boolean atGoal() {
-        return Math.abs(mGoal - getMeasurement()) < AUTO_THRESHOLD;
-    }
-
-    private void doAutoMovement() {
-        if (atGoal()) {
-            mAutoEnabled = false;
-            return;
-        }
-        if (getMeasurement() > mGoal) {
-            if(Math.abs(getMeasurement() - mGoal) < AUTO_THRESHOLD_FINE){
-                mElevatorMotor.set(ELEVATOR_SPEED_UP_FINE);
-            } else {
-                mElevatorMotor.set(ELEVATOR_SPEED_UP);
-            }
-            mCurrentState = State.RAISING;
-        }
-        else if (getMeasurement() < mGoal) {
-            if(Math.abs(getMeasurement() - mGoal) < AUTO_THRESHOLD_FINE){
-                 mElevatorMotor.set(ELEVATOR_SPEED_DOWN_FINE);
-            } else {
-                mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
-            }
-            mCurrentState = State.LOWERING;
-        }
+        return pidController.atSetpoint();
     }
 
     protected double getMeasurement() {
         return mCurrentMeasurement;
     }
-
+    private double target;
     public void setPosition(Position position) {
-        double target = 0;
+        target = 0;
 
         mCurrentPosition = position;
         if (position == Position.HOME) {
-            if (!isElevatorAtBottom()) {
-                mCurrentState = State.LOWERING;
-                mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
-                return;
-            } else {
-                mCurrentState = State.STOPPED;
-                stopMotor();
-            }
+            target = encoderZeroValue;
         }
         else if (position == Position.AMP) {
-            target = ELEVATOR_HEIGHT_AMP;
-        
+            target = ELEVATOR_HEIGHT_AMP;    
             target = encoderZeroValue - target;
-            if (target > getMeasurement()) {
-                mCurrentState = State.RAISING;
-            } else if (target > getMeasurement()) {
-                mCurrentState = State.LOWERING;
-            } else {
-                mCurrentState = State.STOPPED;
-            }
-
             System.out.println("setting elevator height: " + target);
-            mGoal = target;
-            mAutoEnabled = true;
         }
+
+        if (target > getMeasurement()) {
+            mCurrentState = State.RAISING;
+        } else if (target > getMeasurement()) {
+            mCurrentState = State.LOWERING;
+        } else {
+            mCurrentState = State.STOPPED;
+        }
+
+        pidController.setSetpoint(target);
+        enable();
+    }
+
+    @Override
+    protected void useOutput(double output, double setpoint) {
+        // clamp the output to a sane range
+        double val;
+        if (output < 0) {
+            val = Math.max(-kMotorVoltageLimit, output);
+        } else {
+            val = Math.min(kMotorVoltageLimit, output);
+        }
+        mElevatorMotor.set(val);
     }
 }
