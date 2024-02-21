@@ -32,14 +32,12 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     private double m_benderAngle;
     private BenderPosition m_currentTargetPosition = BenderPosition.SHOOT_SPEAKER;
 
-    // max error ~= 30
-    // 30 * 0.033 == 1 (100% at max error)
-    private static final double kP = 0.03;
+    private static final double kP = 0.08;
     private static final double kI = 0.0;
     private static final double kD = 0.0;
     private static final double kDt = 0.02;
 
-    private static final double kMotorVoltageLimit = 0.1; // TUNE the loop so this can be 1
+    private static final double kMotorVoltageLimit = 0.5;
 
     private static final double kIZone = 5;
 
@@ -53,7 +51,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     private final static double BENDER_SPEAKER_LOCATION = 51.6;
 
     /** angle where bender is down so we can load it with a note from internal storage */
-    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 25.9;
+    private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 27.2;
 
     /** angle where bender is positioned so we can load it with a note from the source */
     private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
@@ -62,7 +60,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     private final static double BENDER_SHOOT_AMP_LOCATION = 47.6;
 
     /** distance away from expected location that we still concider good */
-    private final static double BENDER_ANGLE_THRESHOLD = 0.4;
+    private final static double BENDER_ANGLE_THRESHOLD = 0.6;
 
     private static final PIDController pidController = new PIDController(kP, kI, kD,kDt);
 
@@ -241,7 +239,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, output);
         }
-        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, val);
+        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -val);
     }
 
     @Override
