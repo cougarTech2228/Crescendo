@@ -19,15 +19,24 @@ public class ClimberSubsystem extends SubsystemBase {
     private final static double LOWERSPEED = -1;
     private final static double RAISESPEED = 1;
 
-    enum State{
+    enum State {
         STOPPED,
         RAISING,
         LOWERING
     }
+
     private State currentState = State.STOPPED;
 
+    private static ClimberSubsystem mInstance = null;
 
-    public ClimberSubsystem() {
+    public static ClimberSubsystem getInstance() {
+        if (mInstance == null) {
+            mInstance = new ClimberSubsystem();
+        }
+        return mInstance;
+    }
+
+    private ClimberSubsystem() {
         mClimberMotor = new TalonFX(Constants.kClimberMotorId, "canivore");
         mClimberTopSensor = new DigitalInput(Constants.kClimberTopSensorId);
         mClimberBottomSensor = new DigitalInput(Constants.kClimberBottomSensorId);
@@ -53,9 +62,8 @@ public class ClimberSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         if (currentState == State.RAISING && isClimberAtTop()) {
-            stopMotors();   
-        }
-        else if(currentState == State.LOWERING && isClimberAtBottom()) {
+            stopMotors();
+        } else if (currentState == State.LOWERING && isClimberAtBottom()) {
             stopMotors();
         }
     }
@@ -67,7 +75,8 @@ public class ClimberSubsystem extends SubsystemBase {
     }
 
     public boolean isClimberAtBottom() {
-        // Returns a boolean, true being that the climber is at farthest bottom it can be
+        // Returns a boolean, true being that the climber is at farthest bottom it can
+        // be
         // not climber.get because it's inverted
         return !mClimberBottomSensor.get();
 
@@ -81,18 +90,16 @@ public class ClimberSubsystem extends SubsystemBase {
     public void raiseMotors() {
         if (isClimberAtTop()) {
             stopMotors();
-        }
-        else { 
+        } else {
             mClimberMotor.set(RAISESPEED);
             currentState = State.RAISING;
-        }     
+        }
     }
-    
+
     public void lowerMotors() {
         if (isClimberAtBottom()) {
             stopMotors();
-        }
-        else {
+        } else {
             mClimberMotor.set(LOWERSPEED);
             currentState = State.LOWERING;
         }

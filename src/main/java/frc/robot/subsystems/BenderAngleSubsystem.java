@@ -50,10 +50,16 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     /** angle where bender is out of the way so we can shoot at the speaker */
     private final static double BENDER_SPEAKER_LOCATION = 51.6;
 
-    /** angle where bender is down so we can load it with a note from internal storage */
+    /**
+     * angle where bender is down so we can load it with a note from internal
+     * storage
+     */
     private final static double BENDER_INTERNAL_LOAD_NOTE_LOCATION = 27.2;
 
-    /** angle where bender is positioned so we can load it with a note from the source */
+    /**
+     * angle where bender is positioned so we can load it with a note from the
+     * source
+     */
     private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
 
     /** angle where bender is in the correct location to shoot into the amp */
@@ -70,7 +76,16 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         lowering
     };
 
-    public BenderAngleSubsystem() {
+    private static BenderAngleSubsystem mInstance = null;
+
+    public static BenderAngleSubsystem getInstance() {
+        if (mInstance == null) {
+            mInstance = new BenderAngleSubsystem();
+        }
+        return mInstance;
+    }
+
+    private BenderAngleSubsystem() {
         super(pidController, 0);
 
         pidController.setTolerance(BENDER_ANGLE_THRESHOLD);
@@ -145,7 +160,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         new Thread("benderAngleEncoder") {
             public void run() {
                 while (true) {
-                     m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
+                    m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
@@ -157,6 +172,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     }
 
     private boolean isDisabled = DriverStation.isDisabled();
+
     @Override
     public void periodic() {
         super.periodic();
@@ -193,7 +209,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     public void setBenderPosition(BenderPosition position) {
         double angle = 0;
         m_currentTargetPosition = position;
-        switch(position){
+        switch (position) {
             case LOAD_INTERNAL:
                 angle = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
                 break;
@@ -248,8 +264,8 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     }
 
     /**
-     *  @return true if the bender is flipped back out of the way so
-     *  that a note can be shot at the speaker without hitting the bender
+     * @return true if the bender is flipped back out of the way so
+     *         that a note can be shot at the speaker without hitting the bender
      */
     public boolean isInSpeakerLocation() {
         return m_currentTargetPosition == BenderPosition.SHOOT_SPEAKER && atGoal();
@@ -257,7 +273,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
     /**
      * @return true if the bender is flipped forward so that a note can be fed from
-     * the internal chamber into the bender
+     *         the internal chamber into the bender
      */
     public boolean isInInternalLoadingLocation() {
         return m_currentTargetPosition == BenderPosition.LOAD_INTERNAL && atGoal();

@@ -24,9 +24,9 @@ import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
 
 public class ShooterSubsystem extends SubsystemBase {
 
-    private BenderAngleSubsystem mBenderAngleSubsystem = new BenderAngleSubsystem();
-    private ShooterAngleSubsystem mShooterAngleSubsystem = new ShooterAngleSubsystem();
-    private ElevatorSubsystem mElevatorSubsystem = new ElevatorSubsystem();
+    private BenderAngleSubsystem mBenderAngleSubsystem = BenderAngleSubsystem.getInstance();
+    private ShooterAngleSubsystem mShooterAngleSubsystem = ShooterAngleSubsystem.getInstance();
+    private ElevatorSubsystem mElevatorSubsystem = ElevatorSubsystem.getInstance();
     private TalonFX mShooterFeedMotor;
     private TalonFX mShooterFlywheelMotor;
     private DigitalInput mGroundFeedSensor;
@@ -36,6 +36,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private CANSparkMax mShooterBeltMotor;
     private TalonSRX mBenderFeedMotor;
     double timeCheck;
+
     private enum ShooterState {
         EMPTY,
         ACQUIRINGBOTTOM,
@@ -50,6 +51,7 @@ public class ShooterSubsystem extends SubsystemBase {
         READY_FOR_FIRE_AMP,
         FIRE_AMP
     };
+
     private ShooterState shooterState = ShooterState.EMPTY;
     private boolean m_isLoaded = false;
 
@@ -62,6 +64,7 @@ public class ShooterSubsystem extends SubsystemBase {
         FIRE_AMP,
         SPIT
     };
+
     private OperatorEvent currentEvent;
 
     private final static double LOAD_SPEED_GROUND = 1;
@@ -75,7 +78,16 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double BENDER_FEED_SPEED = -1.0;
     private final static double AMP_SHOOTER_DELAY = 2;
 
-    public ShooterSubsystem() {
+    private static ShooterSubsystem mInstance = null;
+
+    public static ShooterSubsystem getInstance() {
+        if (mInstance == null) {
+            mInstance = new ShooterSubsystem();
+        }
+        return mInstance;
+    }
+
+    private ShooterSubsystem() {
         mShooterFeedMotor = new TalonFX(Constants.kShooterFeedMotorId);
         mShooterFlywheelMotor = new TalonFX(Constants.kShooterFlywheelMotorId);
         mGroundFeedSensor = new DigitalInput(Constants.kGroundFeedSensorId);
@@ -83,7 +95,7 @@ public class ShooterSubsystem extends SubsystemBase {
         mTopFeedSensor = new DigitalInput(Constants.kTopFeedSensorId);
         mGroundFeedMotor = new CANSparkMax(Constants.kGroundFeedMotorId, MotorType.kBrushless);
         mShooterBeltMotor = new CANSparkMax(Constants.kShooterBeltMotorId, MotorType.kBrushless);
-        
+
         mBenderFeedMotor = new TalonSRX(Constants.kBenderFeedMotorId);
         mBenderFeedMotor.setNeutralMode(NeutralMode.Brake);
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -130,9 +142,6 @@ public class ShooterSubsystem extends SubsystemBase {
             };
         });
 
-       
-
-
         sbTab.addString("Shooter state", new Supplier<String>() {
             @Override
             public String get() {
@@ -141,8 +150,8 @@ public class ShooterSubsystem extends SubsystemBase {
         });
 
         stateMachineThread.start();
-    }   
-    
+    }
+
     public void initStateMachine(boolean preloaded) {
         if (preloaded) {
             changeState(ShooterState.LOADED);
@@ -167,9 +176,10 @@ public class ShooterSubsystem extends SubsystemBase {
             while (true) {
                 try {
                     Thread.sleep(10);
-                } catch (InterruptedException e) { }
+                } catch (InterruptedException e) {
+                }
 
-                if(currentEvent == OperatorEvent.SPIT) {
+                if (currentEvent == OperatorEvent.SPIT) {
                     mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
                     continue;
                 }
@@ -177,7 +187,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 switch (shooterState) {
                     case EMPTY:
                         stopAllMotors();
-                        // TODO: if bender is not in default position, shooterState = ShooterState.SETBENDERTODEFAULTPOSITION;
+                        // TODO: if bender is not in default position, shooterState =
+                        // ShooterState.SETBENDERTODEFAULTPOSITION;
                         // else shooterState = ShooterState.
                         if (isNoteAtBottom()) {
                             changeState(ShooterState.ACQUIRINGBOTTOM);
@@ -203,21 +214,18 @@ public class ShooterSubsystem extends SubsystemBase {
                             currentEvent = OperatorEvent.NONE;
                             // ensure bender is out of the way
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            //mShooterAngleSubsystem.setPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
+                            // mShooterAngleSubsystem.setPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
                             changeState(ShooterState.FIRE_SPEAKER_PREP);
-                        }
-                        else if (currentEvent == OperatorEvent.PREP_AMP) {
+                        } else if (currentEvent == OperatorEvent.PREP_AMP) {
                             currentEvent = OperatorEvent.NONE;
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
                             mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_AMP);
                             changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
-                        }
-                        else if(currentEvent == OperatorEvent.PREP_SPEAKER_FRONT){
+                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_FRONT) {
                             currentEvent = OperatorEvent.NONE;
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
                             mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_FRONT);
-                        }
-                        else if(currentEvent == OperatorEvent.PREP_SPEAKER_SIDE){
+                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_SIDE) {
                             currentEvent = OperatorEvent.NONE;
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
                             mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_SIDE);
@@ -228,9 +236,9 @@ public class ShooterSubsystem extends SubsystemBase {
                         mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
                         // TODO: Make this if statement work
                         if (flywheelIsAtShootingSpeed() &&
-                            mBenderAngleSubsystem.isInSpeakerLocation() &&
-                            (mShooterAngleSubsystem.isInSpeakerLocation_front() || mShooterAngleSubsystem.isInSpeakerLocation_side()))
-                        {
+                                mBenderAngleSubsystem.isInSpeakerLocation() &&
+                                (mShooterAngleSubsystem.isInSpeakerLocation_front()
+                                        || mShooterAngleSubsystem.isInSpeakerLocation_side())) {
                             changeState(ShooterState.FIRE_SPEAKER);
                             timeCheck = Timer.getFPGATimestamp();
                         }
@@ -269,15 +277,16 @@ public class ShooterSubsystem extends SubsystemBase {
                         mShooterBeltMotor.set(0);
                         mShooterFeedMotor.set(0);
                         mShooterFlywheelMotor.set(0);
-                        if(mBenderAngleSubsystem.isInAmpLocation() &&
-                           mShooterAngleSubsystem.isInAmpLocation() &&
-                           mElevatorSubsystem.isAtAmp()) {
+                        if (mBenderAngleSubsystem.isInAmpLocation() &&
+                                mShooterAngleSubsystem.isInAmpLocation() &&
+                                mElevatorSubsystem.isAtAmp()) {
                             changeState(ShooterState.READY_FOR_FIRE_AMP);
                         }
                         break;
                     case READY_FOR_FIRE_AMP:
                         // If amp shooter button is pressed
-                        // {timeCheck = Timer.getFPGATimestamp(); changeState(ShooterState.BENDERSHOOT;)}
+                        // {timeCheck = Timer.getFPGATimestamp();
+                        // changeState(ShooterState.BENDERSHOOT;)}
                         if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
                             changeState(ShooterState.FIRE_AMP);
                             timeCheck = Timer.getFPGATimestamp();
@@ -300,22 +309,23 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     /**
-     *  @return true if a note is at the front of the intake
+     * @return true if a note is at the front of the intake
      */
     private boolean isNoteAtBottom() {
         return !mGroundFeedSensor.get();
     }
 
     /**
-     *  @return true if a note is currently seen between the ground
-     * feeder, and the main chamber
+     * @return true if a note is currently seen between the ground
+     *         feeder, and the main chamber
      */
     private boolean isNoteAtMiddle() {
         return !mMiddleFeedSensor.get();
     }
 
     /**
-     *  @return true if a note is currently seen between the main chamber and the bender
+     * @return true if a note is currently seen between the main chamber and the
+     *         bender
      */
     private boolean isNoteAtTop() {
         return !mTopFeedSensor.get();
@@ -325,9 +335,9 @@ public class ShooterSubsystem extends SubsystemBase {
      * @return true if the flywheel is up to speed for shooting in the speaker
      */
     private boolean flywheelIsAtShootingSpeed() {
-        //System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
+        // System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
         return true;
-        //return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
+        // return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
     }
 
     public void stopFeedShootMotors() {
@@ -361,12 +371,13 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private boolean isShooterDelayExpired() {
-        // Returns a boolean, where true indicates that the time between the value of timeCheck and the present time is greater than SHOOTER_DELAY
-        return ((Timer.getFPGATimestamp()-timeCheck) > SPEAKER_SHOOTER_DELAY) ;
+        // Returns a boolean, where true indicates that the time between the value of
+        // timeCheck and the present time is greater than SHOOTER_DELAY
+        return ((Timer.getFPGATimestamp() - timeCheck) > SPEAKER_SHOOTER_DELAY);
     }
 
-    private boolean isAmpShooterDelayExpired () {
-         return ((Timer.getFPGATimestamp()-timeCheck) > AMP_SHOOTER_DELAY) ;
+    private boolean isAmpShooterDelayExpired() {
+        return ((Timer.getFPGATimestamp() - timeCheck) > AMP_SHOOTER_DELAY);
     }
 
     private void acquiringBottom() {
@@ -394,15 +405,16 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public void operatorEvent(OperatorEvent event) {
         currentEvent = event;
-    } 
-
+    }
 
     public void raiseElevator() {
         mElevatorSubsystem.raiseElevator();
     }
+
     public void stopElevator() {
         mElevatorSubsystem.stopMotor();
     }
+
     public void lowerElevator() {
         mElevatorSubsystem.lowerElevator();
     }

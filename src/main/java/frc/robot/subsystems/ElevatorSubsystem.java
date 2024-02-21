@@ -4,32 +4,20 @@ import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.revrobotics.CANSparkBase.IdleMode;
-
-import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class ElevatorSubsystem extends PIDSubsystem {
-    
-    private static final double ELEVATOR_HEIGHT_AMP = 65;
-    private static final double ELEVATOR_HEIGHT_HOME = 20;
 
-    private static final double ELEVATOR_THRESHOLD = 0.5; //TODO
+    private static final double ELEVATOR_HEIGHT_AMP = 65;
+    private static final double ELEVATOR_THRESHOLD = 0.5;
 
     private static final double kP = 0.025;
     private static final double kI = 0.0;
@@ -38,42 +26,44 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     private static final double kMotorVoltageLimit = 0.7;
 
-    private static final double kIZone = 5;
-
-
     private double encoderZeroValue = 0;
-
-
 
     private TalonFX mElevatorMotor;
     private DigitalInput mElevatorTopSensor;
     private DigitalInput mElevatorBottomSensor;
     private static final double ELEVATOR_SPEED_UP = -0.4;
     private static final double ELEVATOR_SPEED_DOWN = 0.4;
-    private static final double ELEVATOR_SPEED_UP_FINE = -0.1;
-    private static final double ELEVATOR_SPEED_DOWN_FINE= 0.1;
 
     private double mCurrentMeasurement = 0;
-    private double mRequestedPosition = 0;
     private boolean mIsZeroed = false;
-
 
     enum State {
         STOPPED,
         RAISING,
         LOWERING,
     }
+
     private State mCurrentState = State.STOPPED;
-    
+
     enum Position {
         HOME,
         AMP
     }
+
     private Position mCurrentPosition = Position.HOME;
-    
+
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
 
-    public ElevatorSubsystem() {
+    private static ElevatorSubsystem mInstance = null;
+
+    public static ElevatorSubsystem getInstance() {
+        if (mInstance == null) {
+            mInstance = new ElevatorSubsystem();
+        }
+        return mInstance;
+    }
+
+    private ElevatorSubsystem() {
         super(pidController, 0);
 
         pidController.setTolerance(ELEVATOR_THRESHOLD);
@@ -142,6 +132,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
     }
 
     private boolean isDisabled = DriverStation.isDisabled();
+
     @Override
     public void periodic() {
         super.periodic();
@@ -173,19 +164,16 @@ public class ElevatorSubsystem extends PIDSubsystem {
         }
 
         mCurrentMeasurement = mElevatorMotor.getRotorPosition().refresh().getValue();
-    
-        if(mCurrentState == State.RAISING && isElevatorAtTop()) {
+
+        if (mCurrentState == State.RAISING && isElevatorAtTop()) {
             stopMotor();
             mCurrentState = State.STOPPED;
-        }
-        else if(mCurrentState == State.LOWERING && isElevatorAtBottom()) {
+        } else if (mCurrentState == State.LOWERING && isElevatorAtBottom()) {
             stopMotor();
             mCurrentState = State.STOPPED;
             mCurrentPosition = Position.HOME;
         }
     }
-
-    
 
     public boolean isElevatorAtBottom() {
         // Returns a boolean, opposite of elevator sensor.get
@@ -210,11 +198,11 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     public void raiseElevator() {
         // setPosition(Position.AMP);
-        //Moves the elevator
+        // Moves the elevator
         System.out.println("called raise elevator");
-        if(!isElevatorAtTop()) {
+        if (!isElevatorAtTop()) {
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
-            //mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
+            // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
             mCurrentState = State.RAISING;
             System.out.println("raising");
         }
@@ -222,9 +210,9 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     public void lowerElevator() {
         // setPosition(Position.HOME);
-        //Moves the elevator down
+        // Moves the elevator down
         System.out.println("called lower elevator");
-        if(!isElevatorAtBottom()) {
+        if (!isElevatorAtBottom()) {
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
             mCurrentState = State.LOWERING;
             System.out.println("lowering");
@@ -246,16 +234,15 @@ public class ElevatorSubsystem extends PIDSubsystem {
     protected double getMeasurement() {
         return mCurrentMeasurement;
     }
-    private double target;
+
     public void setPosition(Position position) {
-        target = 0;
+        double target = 0;
 
         mCurrentPosition = position;
         if (position == Position.HOME) {
             target = encoderZeroValue;
-        }
-        else if (position == Position.AMP) {
-            target = ELEVATOR_HEIGHT_AMP;    
+        } else if (position == Position.AMP) {
+            target = ELEVATOR_HEIGHT_AMP;
             target = encoderZeroValue - target;
             System.out.println("setting elevator height: " + target);
         }

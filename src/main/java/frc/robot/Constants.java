@@ -1,17 +1,17 @@
 package frc.robot;
 
-public class Constants 
-{
+public class Constants {
 
-    // Swerve constants are in generated/TunerConstants as they were created via the TunerX app
+    // Swerve constants are in generated/TunerConstants as they were created via the
+    // TunerX app
 
     // Shooter
-    public static final int kShooterFeedMotorId = 21;      // Falcon 500
-    public static final int kShooterFlywheelMotorId = 20;  // Falcon 500
-    public static final int kShooterBeltMotorId = 22;           // Spark Max
+    public static final int kShooterFeedMotorId = 21; // Falcon 500
+    public static final int kShooterFlywheelMotorId = 20; // Falcon 500
+    public static final int kShooterBeltMotorId = 22; // Spark Max
 
-    public static final int kClimberMotorId = 10; // Falcon 
-    public static final int kElevatorMotorId = 11; // Falcon 
+    public static final int kClimberMotorId = 10; // Falcon
+    public static final int kElevatorMotorId = 11; // Falcon
     public static final int kGroundFeedMotorId = 9; // Spark Max
     public static final int kBenderTiltMotorId = 7; // Talon SRX
     public static final int kBenderFeedMotorId = 15; // Talon SRX
@@ -29,6 +29,6 @@ public class Constants
     public static final int kTopFeedSensorId = 7;
     public static final int kBenderAngleEncoderPin = 8;
 
-    //PWM
+    // PWM
     public static final int kDriverCameraPWMID = 0;
 }

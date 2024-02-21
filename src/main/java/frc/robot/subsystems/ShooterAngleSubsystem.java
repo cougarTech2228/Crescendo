@@ -7,12 +7,9 @@ import java.util.function.Supplier;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
@@ -27,23 +24,14 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     private static final double SPEED_DOWN_FINE = 0.3;
     private double m_shooterAngle;
 
-    // private static final double kSVolts = 0;
-    // private static final double kGVolts = 0;
-    // private static final double kVVolt = 0;
-    // private static final double kAVolt = 0;
-
     private double mGoal = 0;
     private double AUTO_THRESHOLD = 1;
     private double AUTO_THRESHOLD_FINE = 15;
     private boolean mAutoEnabled = false;
 
-    //max up is 36.4
-    //min down is 41.1
-
     /** angle where shooter is able to shoot at the speaker */
     private final static double SHOOT_SPEAKER_SIDE_ANGLE = 395;
     private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
-    //private final static double SHOOT_SPEAKER_ANGLE = 375;
 
     /** angle where shooter is able to shoot at the amp */
     private final static double SHOOT_AMP_ANGLE = 378;
@@ -72,9 +60,15 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     private ShooterPosition m_currentTargetPosition = ShooterPosition.SHOOT_SPEAKER_FRONT;
     // TODO make it so we can input where the shooter position is instead of being at front always
 
-
+    private static ShooterAngleSubsystem mInstance = null;
+    public static ShooterAngleSubsystem getInstance() {
+        if (mInstance == null) {
+            mInstance = new ShooterAngleSubsystem();
+        }
+        return mInstance;
+    }
     
-    public ShooterAngleSubsystem() {
+    private ShooterAngleSubsystem() {
         mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorMotorId);
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
@@ -108,7 +102,6 @@ public class ShooterAngleSubsystem extends SubsystemBase {
                 return mCurrentState.name();
             }
         });
-
 
         new Thread("shooterAngleEncoder") {
             public void run() {
@@ -162,35 +155,28 @@ public class ShooterAngleSubsystem extends SubsystemBase {
         System.out.println("lowering");
     }
 
-	
 	protected double getMeasurement() {
 		return m_shooterAngle;
     }
 
-
     public boolean isInSpeakerLocation_front() {
         return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER_FRONT;
-    //    return true;
     }
     public boolean isInSpeakerLocation_side() {
         return m_currentTargetPosition == ShooterPosition.SHOOT_SPEAKER_SIDE;
-    //    return true;
     }
 
 
     public boolean isInAmpLocation() {
         return m_currentTargetPosition == ShooterPosition.SHOOT_AMP;
-        // return true;
     }
 
     public boolean isInChainLocation() {
         return m_currentTargetPosition == ShooterPosition.HEIGHT_CHAIN;
-        // return true;
     }
 
     public boolean isInSourceLocation() {
         return m_currentTargetPosition == ShooterPosition.LOAD_SOURCE;
-        // return true;
     }
 
     public void setPosition(ShooterPosition position) {
