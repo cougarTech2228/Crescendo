@@ -6,18 +6,24 @@ package frc.robot;
 
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.ShootSpeakerCommand;
 import frc.robot.subsystems.AprilTagSubsystem;
 import frc.robot.subsystems.ButtonBoardSubsystem;
 import frc.robot.subsystems.DrivebaseSubsystem;
@@ -46,23 +52,13 @@ public class RobotContainer {
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
   private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-  private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
   /* Path follower */
   private final Telemetry logger = new Telemetry(MaxSpeed);
   private final SendableChooser<Command> autoChooser;
 
-  // Command shootCommand = new SequentialCommandGroup(
-  // new InstantCommand(() -> shooter.startFlywheel()),
-  // new WaitCommand(1),
-  // new InstantCommand(() -> shooter.feedNote()),
-  // new WaitCommand(1),
-  // new InstantCommand(() -> shooter.stopMotors())
-  // );
-  // Command loadNote = new SequentialCommandGroup(
-  // new InstantCommand(() -> shooter.loadNote()),
-  // new WaitCommand(1)
-  // );
+  Command shootFrontCommand = new ShootSpeakerCommand(true);
+  Command shootSideCommand = new ShootSpeakerCommand(false);
 
   public void autonomousInit() {
     shooter.initStateMachine(true);
@@ -164,14 +160,26 @@ public class RobotContainer {
   }
 
   public RobotContainer() {
-    // NamedCommands.registerCommand("shootSpeaker", shootCommand);
-    // NamedCommands.registerCommand("loadNote", loadNote);
+    NamedCommands.registerCommand("shootSpeakerFront", shootFrontCommand);
+    NamedCommands.registerCommand("shootSpeakerSide", shootSideCommand);
+
     configureBindings();
     buttonBoardSubsystem.configureButtonBindings();
 
+    ShuffleboardTab sbTab = Shuffleboard.getTab("Driver");
+
     autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
-    SmartDashboard.putData("Auto Mode", autoChooser);
-    driverCameraTilt = 0.3;
+    sbTab.add("Auto Mode", autoChooser)
+      .withSize(2, 1)
+      .withPosition(6, 0);
+
+    // FIXME get the right video URL here
+    sbTab.addCamera("Driver Camera", "test", "mjpg:http://10.22.28.11:1181/?action=stream4")
+      .withProperties(Map.of("showControls", false))
+      .withPosition(0, 0)
+      .withSize(5, 5);
+
+      driverCameraTilt = 0.3;
   }
 
   public Command getAutonomousCommand() {

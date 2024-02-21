@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
@@ -102,6 +103,12 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
 
         ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
+
+        sbTab.add("Reset State machine", new InstantCommand(() -> {
+            System.out.print("***** Resetting Shooter State Machine *****");
+            shooterState = ShooterState.EMPTY;
+        }));
+
         sbTab.addBoolean("GroundFeedSensor", new BooleanSupplier() {
             @Override
             public boolean getAsBoolean() {
@@ -193,6 +200,14 @@ public class ShooterSubsystem extends SubsystemBase {
                         if (isNoteAtBottom()) {
                             changeState(ShooterState.ACQUIRINGBOTTOM);
                         }
+                        if (currentEvent == OperatorEvent.PREP_SPEAKER_FRONT) {
+                            currentEvent = OperatorEvent.NONE;
+                            prepSpeakerFront();
+                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_SIDE) {
+                            currentEvent = OperatorEvent.NONE;
+                            prepSpeakerSide();
+                        }
+
                         break;
                     case ACQUIRINGBOTTOM:
                         acquiringBottom();
@@ -212,37 +227,29 @@ public class ShooterSubsystem extends SubsystemBase {
 
                         if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
                             currentEvent = OperatorEvent.NONE;
-                            // ensure bender is out of the way
-                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            // mShooterAngleSubsystem.setPosition(ShooterAngleSubsystem.ShooterPosition.SHOOT_SPEAKER);
+                            prepSpeakerFront();
                             changeState(ShooterState.FIRE_SPEAKER_PREP);
                         } else if (currentEvent == OperatorEvent.PREP_AMP) {
                             currentEvent = OperatorEvent.NONE;
-                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
-                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_AMP);
+                            prepAmp();
                             changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
                         } else if (currentEvent == OperatorEvent.PREP_SPEAKER_FRONT) {
                             currentEvent = OperatorEvent.NONE;
-                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_FRONT);
+                            prepSpeakerFront();
                         } else if (currentEvent == OperatorEvent.PREP_SPEAKER_SIDE) {
                             currentEvent = OperatorEvent.NONE;
-                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
-                            mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_SIDE);
+                            prepSpeakerSide();
                         }
-
                         break;
+
                     case FIRE_SPEAKER_PREP:
                         mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
-                        // TODO: Make this if statement work
-                        if (flywheelIsAtShootingSpeed() &&
-                                mBenderAngleSubsystem.isInSpeakerLocation() &&
-                                (mShooterAngleSubsystem.isInSpeakerLocation_front()
-                                        || mShooterAngleSubsystem.isInSpeakerLocation_side())) {
+                        if (isReadyToShootSpeakerSide() || isReadyToShootSpeakerFront()) {
                             changeState(ShooterState.FIRE_SPEAKER);
                             timeCheck = Timer.getFPGATimestamp();
                         }
                         break;
+
                     case FIRE_SPEAKER:
                         launchSpeaker();
                         if (isShooterDelayExpired()) {
@@ -308,6 +315,21 @@ public class ShooterSubsystem extends SubsystemBase {
     public void periodic() {
     }
 
+    private void prepAmp() {
+        mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
+        mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_AMP);
+    }
+
+    private void prepSpeakerFront() {
+        mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+        mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_FRONT);
+    }
+
+    private void prepSpeakerSide() {
+        mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+        mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_SIDE);
+    }
+
     /**
      * @return true if a note is at the front of the intake
      */
@@ -329,15 +351,6 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     private boolean isNoteAtTop() {
         return !mTopFeedSensor.get();
-    }
-
-    /**
-     * @return true if the flywheel is up to speed for shooting in the speaker
-     */
-    private boolean flywheelIsAtShootingSpeed() {
-        // System.out.println(mShooterFlywheelMotor.getVelocity().getValue() >= 1.0);
-        return true;
-        // return mShooterFlywheelMotor.getVelocity().getValue() >= 105;
     }
 
     public void stopFeedShootMotors() {
@@ -417,5 +430,21 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public void lowerElevator() {
         mElevatorSubsystem.lowerElevator();
+    }
+
+    /**
+     * Is everything in the correct location to shoot the speaker from the side?
+     */
+    public boolean isReadyToShootSpeakerSide() {
+        return (mBenderAngleSubsystem.isInSpeakerLocation() &&
+                mShooterAngleSubsystem.isInSpeakerLocation_side());
+    }
+
+    /**
+     * Is everything in the correct location to shoot the speaker from the front?
+     */
+    public boolean isReadyToShootSpeakerFront() {
+        return (mBenderAngleSubsystem.isInSpeakerLocation() &&
+                mShooterAngleSubsystem.isInSpeakerLocation_front());
     }
 }

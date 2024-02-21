@@ -2,39 +2,47 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.OperatorEvent;
 
 public class ShootSpeakerCommand extends Command {
 
     private ShooterSubsystem mShooter;
-    public ShootSpeakerCommand(ShooterSubsystem shooterSubsystem) {
-        mShooter = shooterSubsystem;
-        System.out.println("shootSpeaker()");
+    private boolean mIsFront;
+    public ShootSpeakerCommand(boolean isFront) {
+        mIsFront = isFront;
+        mShooter = ShooterSubsystem.getInstance();
     }
     @Override
     public void initialize() {
-        // TODO Auto-generated method stub
-        super.initialize();
+        mShooter.operatorEvent(mIsFront ? OperatorEvent.PREP_SPEAKER_FRONT :
+            OperatorEvent.PREP_SPEAKER_SIDE);
         System.out.println("initialize()");
     }
 
     @Override
     public void execute() {
-        // TODO Auto-generated method stub
-        super.execute();
-        System.out.println("execute()");
+        if (mIsFront) {
+            if (mShooter.isReadyToShootSpeakerFront()) {
+                mShooter.operatorEvent(OperatorEvent.FIRE_SPEAKER);
+            }
+        } else {
+            if (mShooter.isReadyToShootSpeakerSide()) {
+                mShooter.operatorEvent(OperatorEvent.FIRE_SPEAKER);
+            }
+        }
     }
 
     @Override
     public void end(boolean interrupted) {
-        // TODO Auto-generated method stub
-        super.end(interrupted);
         System.out.println("end()");
     }
 
     @Override
     public boolean isFinished() {
-        // TODO Auto-generated method stub
-        System.out.println("isFinished()");
-        return true;
+        boolean finished = !mShooter.isHoldingNote();
+        if (finished) {
+            System.out.println("Shoot Speaker Command finished!");
+        }
+        return finished;
     }
 }

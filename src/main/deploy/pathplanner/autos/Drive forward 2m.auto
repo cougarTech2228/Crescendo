@@ -12,6 +12,12 @@
     "data": {
       "commands": [
         {
+          "type": "named",
+          "data": {
+            "name": "shootSpeakerSide"
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "drive 2m"
