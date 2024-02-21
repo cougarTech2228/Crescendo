@@ -80,7 +80,7 @@ public class AprilTagSubsystem extends SubsystemBase {
                             Pose2d adjustedPose = new Pose3d(estimatedPose.best.getTranslation(),
                                 estimatedPose.best.getRotation()).toPose2d().transformBy(cameraOffsetTransform);
 
-                            drivebaseSubsystem.addVisionMeasurement(adjustedPose, imageCaptureTime);
+                           // drivebaseSubsystem.addVisionMeasurement(adjustedPose, imageCaptureTime);
                             SmartDashboard.putBoolean("Is Using Vision", true);
                             // System.out.println("adding measurement " + adjustedPose + ", error: " + estimatedPose.bestReprojErr);
                     } else {

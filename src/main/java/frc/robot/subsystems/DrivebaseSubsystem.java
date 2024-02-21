@@ -30,7 +30,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double DRIVEBASE_RADIUS_METERS = 0.45085;
     private static final double MODULE_MAX_SPEED = 3.642; // M/s
-    private static final double STATOR_CURRENT_LIMIT = 23.0; // Amps
+    private static final double STATOR_CURRENT_LIMIT = 40.0; // Amps
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 
@@ -59,8 +59,8 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     }
 
     private HolonomicPathFollowerConfig pathFollowerConfig = new HolonomicPathFollowerConfig(
-        new PIDConstants(10, 0, 0),
-        new PIDConstants(10, 0, 0),
+        new PIDConstants(1, 0, 0.1),
+        new PIDConstants(2, 0, 0.13),
         MODULE_MAX_SPEED,
         DRIVEBASE_RADIUS_METERS,
         new ReplanningConfig(true, true),
