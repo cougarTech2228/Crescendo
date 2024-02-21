@@ -34,24 +34,6 @@
           "data": {
             "name": "shootSpeakerSide"
           }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Pos1ToNote4"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Note4ToPos1"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "shootSpeakerSide"
-          }
         }
       ]
     }
