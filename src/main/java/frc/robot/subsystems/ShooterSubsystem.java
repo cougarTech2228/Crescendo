@@ -458,4 +458,14 @@ public class ShooterSubsystem extends SubsystemBase {
         return (mBenderAngleSubsystem.isInSpeakerLocation() &&
                 mShooterAngleSubsystem.isInSpeakerLocation_front());
     }
+
+    public void raiseBender(){
+        mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+    }
+    public void lowerBender(){
+        mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
+    }
+    public void stopBenderMotor(){
+        mBenderAngleSubsystem.stopBender();
+    }
 }

@@ -89,19 +89,19 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         return new JoystickButton(m_joystick1, 4);
     }
 
-    private JoystickButton blank5() {
+    private JoystickButton raiseBenderButton() {
         return new JoystickButton(m_joystick1, 5);
     }
 
-    private JoystickButton blank6() {
+    private JoystickButton lowerBenderButton() {
         return new JoystickButton(m_joystick1, 6);
     }
 
-    private JoystickButton blank7() {
+    private JoystickButton test1Button() {
         return new JoystickButton(m_joystick1, 7);
     }
 
-    private JoystickButton blank8() {
+    private JoystickButton test2Button() {
         return new JoystickButton(m_joystick1, 8);
     }
 
@@ -228,17 +228,19 @@ public class ButtonBoardSubsystem extends SubsystemBase {
                     ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.PREP_SPEAKER_FRONT);
                 }));
 
-        blank7().onTrue(
-                new InstantCommand(() -> {
-                    System.out.println("blank7 Pressed");
-                    ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.SHOOT_AMP);
-                }));
-        blank8().onTrue(
-                new InstantCommand(() -> {
-                    System.out.println("blank8 Pressed");
-                    ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.HEIGHT_CHAIN);
-
-                }));
+        test1Button().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("Test 1 Pressed");
+                ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.SHOOT_AMP);
+            })
+        );
+        test2Button().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("Test 2 Pressed");
+                ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.HEIGHT_CHAIN);
+                
+            })
+        );
 
         shootButton().onTrue(
                 new InstantCommand(() -> {
@@ -246,22 +248,10 @@ public class ButtonBoardSubsystem extends SubsystemBase {
                     ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.FIRE_SPEAKER);
                 }));
 
-        shootButton().onFalse(
-                new InstantCommand(() -> {
-                    System.out.println("Shoot Speaker Button Realeased");
-                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.NONE);
-                }));
-
         prepAmpButton().onTrue(
                 new InstantCommand(() -> {
                     System.out.println("Prep Amp Button Pressed");
                     ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.PREP_AMP);
-                }));
-
-        prepAmpButton().onFalse(
-                new InstantCommand(() -> {
-                    System.out.println("Prep Amp Button Realeased");
-                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.NONE);
                 }));
 
         prepSpeakerSideButton().onTrue(
@@ -281,10 +271,39 @@ public class ButtonBoardSubsystem extends SubsystemBase {
                     System.out.println("Spit Button Pressed");
                     ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.SPIT);
                 }));
+
         spitButton().onFalse(
                 new InstantCommand(() -> {
                     System.out.println("Spit Button Released!");
                     ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.NONE);
-                }));
+        }));
+
+        raiseBenderButton().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("Raise Bender Button Pressed");
+                ShooterSubsystem.getInstance().raiseBender();
+            })
+        );
+
+        raiseBenderButton().onFalse(
+            new InstantCommand(() -> {
+                System.out.println("Raise Bender Button Released");
+                ShooterSubsystem.getInstance().stopBenderMotor();
+            })
+        );
+
+        lowerBenderButton().onTrue(
+            new InstantCommand(() -> {
+                System.out.println("Lower Bender Button Pressed");
+                ShooterSubsystem.getInstance().lowerBender();
+            })
+        );
+
+        lowerBenderButton().onFalse(
+            new InstantCommand(() -> {
+                System.out.println("Lower Bender Button Released");
+                ShooterSubsystem.getInstance().stopBenderMotor();
+            })
+        );
     }
 }
