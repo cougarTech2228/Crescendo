@@ -78,6 +78,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double BENDER_SHOOT_SPEED = 1.0;
     private final static double BENDER_FEED_SPEED = -1.0;
     private final static double AMP_SHOOTER_DELAY = 2;
+    private final static double AMP_PRELOAD_DELAY = 1.0;
 
     private static ShooterSubsystem mInstance = null;
 
@@ -276,18 +277,24 @@ public class ShooterSubsystem extends SubsystemBase {
                         if (!isNoteAtTop()) {
                             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
                             mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.AMP);
+                            //mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                            mShooterBeltMotor.set(0);
+                            mShooterFeedMotor.set(0);
+                            mShooterFlywheelMotor.set(0);
+
+                            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+                            timeCheck = Timer.getFPGATimestamp();
                             changeState(ShooterState.BENDER_LOAD_INTERNAL_LOADED);
                         }
                         break;
                     case BENDER_LOAD_INTERNAL_LOADED:
-                        mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
-                        mShooterBeltMotor.set(0);
-                        mShooterFeedMotor.set(0);
-                        mShooterFlywheelMotor.set(0);
-                        if (mBenderAngleSubsystem.isInAmpLocation() &&
+                        if (isAmpShooterPreloadDelayExpired()){
+                            mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                            if (mBenderAngleSubsystem.isInAmpLocation() &&
                                 mShooterAngleSubsystem.isInAmpLocation() &&
                                 mElevatorSubsystem.isAtAmp()) {
-                            changeState(ShooterState.READY_FOR_FIRE_AMP);
+                                changeState(ShooterState.READY_FOR_FIRE_AMP);
+                            }
                         }
                         break;
                     case READY_FOR_FIRE_AMP:
@@ -391,6 +398,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private boolean isAmpShooterDelayExpired() {
         return ((Timer.getFPGATimestamp() - timeCheck) > AMP_SHOOTER_DELAY);
+    }
+
+    private boolean isAmpShooterPreloadDelayExpired() {
+        return ((Timer.getFPGATimestamp() - timeCheck) > AMP_PRELOAD_DELAY);
     }
 
     private void acquiringBottom() {
