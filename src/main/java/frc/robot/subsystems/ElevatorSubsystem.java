@@ -197,6 +197,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
     }
 
     public void raiseElevator() {
+        disable();
         // setPosition(Position.AMP);
         // Moves the elevator
         System.out.println("called raise elevator");
@@ -210,6 +211,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
     }
 
     public void lowerElevator() {
+        disable();
         // setPosition(Position.HOME);
         // Moves the elevator down
         System.out.println("called lower elevator");

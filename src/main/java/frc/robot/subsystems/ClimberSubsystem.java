@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -55,6 +56,13 @@ public class ClimberSubsystem extends SubsystemBase {
             @Override
             public boolean getAsBoolean() {
                 return isClimberAtBottom();
+            };
+        });
+
+        m_sbTab.addDouble("Climber voltage", new DoubleSupplier() {
+            @Override
+            public double getAsDouble() {
+                return mClimberMotor.getMotorVoltage().getValue();
             };
         });
     }

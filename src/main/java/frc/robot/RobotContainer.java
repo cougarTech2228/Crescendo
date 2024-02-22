@@ -173,6 +173,9 @@ public class RobotContainer {
       .withSize(2, 1)
       .withPosition(6, 0);
 
+    autoChooser.addOption("Shoot Front", shootFrontCommand);
+    autoChooser.addOption("Shoot Side", shootSideCommand);
+
     // FIXME get the right video URL here
     sbTab.addCamera("Driver Camera", "test", "mjpg:http://10.22.28.11:1181/?action=stream4")
       .withProperties(Map.of("showControls", false))

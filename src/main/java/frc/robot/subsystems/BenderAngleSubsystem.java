@@ -44,8 +44,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     private static final double ANGLE_MIN = 5;
     private static final double ANGLE_MAX = 48;
 
-    // private final static double BENDER_RAISE_SPEED = 0.2;
-    // private final static double BENDER_LOWER_SPEED = -0.2;
+    private final static double BENDER_SPEED = 0.2;
 
     /** angle where bender is out of the way so we can shoot at the speaker */
     private final static double BENDER_SPEAKER_LOCATION = 51.6;
@@ -198,7 +197,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         return pidController.atSetpoint();
     }
 
-    private void stopBender() {
+    public void stopBender() {
         if (m_benderState != BenderState.stopped) {
             System.out.println("stopping bender");
             m_benderState = BenderState.stopped;
@@ -284,5 +283,25 @@ public class BenderAngleSubsystem extends PIDSubsystem {
      */
     public boolean isInAmpLocation() {
         return m_currentTargetPosition == BenderPosition.SHOOT_AMP && atGoal();
+    }
+
+    public void raiseBender() {
+        disable();
+        System.out.println("called raise elevator");
+        if(!isBenderUpperLimitReached()) {
+            //mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, BENDER_SPEED);
+            m_benderState = BenderState.raising;
+            System.out.println("raising bender");
+        }
+    }
+
+    public void lowerBender() {
+        disable();
+        System.out.println("called lower elevator");
+        if(!isBenderLowerLimitReached()) {
+            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -BENDER_SPEED);
+            m_benderState = BenderState.lowering;
+            System.out.println("lowering");
+        }
     }
 }
