@@ -104,7 +104,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
 
-        sbTab.add("Reset State machine", new InstantCommand(() -> {
+        sbTab.add("Reset State Machine", new InstantCommand(() -> {
             System.out.print("***** Resetting Shooter State Machine *****");
             shooterState = ShooterState.EMPTY;
         }));
@@ -303,6 +303,8 @@ public class ShooterSubsystem extends SubsystemBase {
                         mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
                         if (isAmpShooterDelayExpired()) {
                             m_isLoaded = false;
+                            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
+                            mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
                             changeState(ShooterState.EMPTY);
                         }
                         break;

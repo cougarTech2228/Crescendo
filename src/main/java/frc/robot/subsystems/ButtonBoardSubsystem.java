@@ -230,12 +230,12 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
         blank7().onTrue(
                 new InstantCommand(() -> {
-                    System.out.println("blank7 Pressed");
+                    System.out.println("Test 1 Pressed");
                     ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.SHOOT_AMP);
                 }));
         blank8().onTrue(
                 new InstantCommand(() -> {
-                    System.out.println("blank8 Pressed");
+                    System.out.println("Test 2 Pressed");
                     ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.HEIGHT_CHAIN);
 
                 }));

@@ -14,9 +14,9 @@ public class ShootSpeakerCommand extends Command {
     }
     @Override
     public void initialize() {
+        System.out.println("initialize()");
         mShooter.operatorEvent(mIsFront ? OperatorEvent.PREP_SPEAKER_FRONT :
             OperatorEvent.PREP_SPEAKER_SIDE);
-        System.out.println("initialize()");
     }
 
     @Override

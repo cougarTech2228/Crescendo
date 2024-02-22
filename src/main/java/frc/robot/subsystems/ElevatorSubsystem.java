@@ -200,6 +200,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // setPosition(Position.AMP);
         // Moves the elevator
         System.out.println("called raise elevator");
+        disable();
         if (!isElevatorAtTop()) {
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
@@ -212,6 +213,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // setPosition(Position.HOME);
         // Moves the elevator down
         System.out.println("called lower elevator");
+        disable();
         if (!isElevatorAtBottom()) {
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
             mCurrentState = State.LOWERING;
