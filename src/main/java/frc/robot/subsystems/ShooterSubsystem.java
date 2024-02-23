@@ -38,22 +38,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private TalonSRX mBenderFeedMotor;
     double timeCheck;
 
-    private enum ShooterState {
-        EMPTY,
-        ACQUIRINGBOTTOM,
-        ACQUIRINGTOP,
-        LOADED,
-        FIRE_SPEAKER_PREP,
-        FIRE_SPEAKER,
-        BENDER_LOAD_INTERNAL_PREP,
-        BENDER_LOAD_INTERNAL_LOAD_BENDER,
-        BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE,
-        BENDER_LOAD_INTERNAL_LOADED,
-        READY_FOR_FIRE_AMP,
-        FIRE_AMP
-    };
-
-    private ShooterState shooterState = ShooterState.EMPTY;
     private boolean m_isLoaded = false;
 
     public enum OperatorEvent {
@@ -61,14 +45,13 @@ public class ShooterSubsystem extends SubsystemBase {
         PREP_AMP,
         PREP_SPEAKER_FRONT,
         PREP_SPEAKER_SIDE,
-        FIRE_SPEAKER,
-        FIRE_AMP,
-        SPIT
+        FIRE,
+        SPIT,
+        SPIT_STOP
     };
 
-    private OperatorEvent currentEvent;
-
     private final static double LOAD_SPEED_GROUND = 1;
+    private final static double SPIT_SPEED_GROUND = -1;
     private final static double LOAD_SPEED_BELT = -0.15;
     private final static double LOAD_SPEED_SHOOTER_FEED = 0.05;
     private final static double SPEAKER_SHOOTER_DELAY = 0.5;
@@ -79,6 +62,380 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double BENDER_FEED_SPEED = -1.0;
     private final static double AMP_SHOOTER_DELAY = 2;
     private final static double AMP_PRELOAD_DELAY = 1.0;
+
+    /** Abstract State class */
+    private abstract class State {
+        private String mName;
+
+        protected State(String name) {
+            mName = name;
+        }
+
+        public void enterState() {
+        };
+
+        public void exitState() {
+        };
+
+        public void run() {
+        };
+
+        public final void onEvent(OperatorEvent event) {
+            System.out.println("Event: " + event + " in state " + mName);
+            onEventInternal(event);
+        };
+
+        protected void onEventInternal(OperatorEvent event) {
+            System.out.println("Ingoring Event " + event + " in state " + mName +
+                ", onEventInernal not overridden!");
+        }
+
+        @Override
+        public String toString() {
+            return mName;
+        }
+    }
+
+    // State class instances
+    private EmptyState mEmptyState = new EmptyState();
+    private AcquiringBottomState mAcquiringBottomState = new AcquiringBottomState();
+    private AcquiringTopState mAcquiringTopState = new AcquiringTopState();
+    private LoadedState mLoadedState = new LoadedState();
+    private FireSpeakerPrepState mFireSpeakerPrepState = new FireSpeakerPrepState();
+    private FireSpeakerState mFireSpeakerState = new FireSpeakerState();
+    private BenderLoadInternalPrepState mBenderLoadInternalPrepState = new BenderLoadInternalPrepState();
+    private BenderLoadInternalLoadBenderState mBenderLoadInternalLoadBenderState = new BenderLoadInternalLoadBenderState();
+    private BenderLoadInternalBenderExitingMiddleState mBenderLoadInternalBenderExitingMiddleState = new BenderLoadInternalBenderExitingMiddleState();
+    private BenderLoadInternalLoadedState mBenderLoadInternalLoadedState = new BenderLoadInternalLoadedState();
+    private ReadyForFireAmpState mReadyForFireAmpState = new ReadyForFireAmpState();
+    private FireAmpState mFireAmpState = new FireAmpState();
+    private SpitState mSpitState = new SpitState();
+
+    private State currentState = mEmptyState;
+
+    private class EmptyState extends State {
+        public EmptyState() {
+            super("Empty");
+        }
+
+        @Override
+        public void enterState() {
+            stopAllMotors();
+        }
+
+        @Override
+        public void run() {
+            if (isNoteAtBottom()) {
+                changeState(mAcquiringBottomState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case PREP_SPEAKER_FRONT:
+                    prepSpeakerFront();
+                    break;
+                case PREP_SPEAKER_SIDE:
+                    prepSpeakerSide();
+                    break;
+                case SPIT:
+                    changeState(mSpitState);
+                default:
+                    System.out.println("Ignoring event " + event + " in Empty State");
+            }
+        }
+    }
+
+    private class SpitState extends State {
+        public SpitState() {
+            super("Spit");
+        }
+
+        @Override
+        public void enterState() {
+            stopAllMotors();
+            mGroundFeedMotor.set(SPIT_SPEED_GROUND);
+        }
+
+        @Override
+        public void exitState() {
+            stopAllMotors();
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT_STOP:
+                    changeState(mEmptyState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in " + "Spit State");
+            }
+        }
+    }
+
+    private class AcquiringBottomState extends State {
+        public AcquiringBottomState() {
+            super("Acquiring Bottom");
+        }
+
+        @Override
+        public void enterState() {
+            mGroundFeedMotor.set(LOAD_SPEED_GROUND);
+            mShooterBeltMotor.set(LOAD_SPEED_BELT);
+            mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
+        }
+
+        @Override
+        public void run() {
+            if (isNoteAtMiddle()) {
+                changeState(mAcquiringTopState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
+    }
+
+    private class AcquiringTopState extends State {
+        public AcquiringTopState() {
+            super("Acquiring Top");
+        }
+
+        @Override
+        public void run() {
+            if (!isNoteAtMiddle()) {
+                m_isLoaded = true;
+                changeState(mLoadedState);
+                mElevatorSubsystem.setPosition(Position.HOME);
+            }
+        }
+    }
+
+    private class LoadedState extends State {
+        public LoadedState() {
+            super("Loaded");
+        }
+
+        @Override
+        public void enterState() {
+            m_isLoaded = true;
+            mElevatorSubsystem.setPosition(Position.HOME);
+            stopAllMotors();
+            // run the gound feed motor backwards while loaded to actively reject
+            // new pieces from entering the intake
+            mGroundFeedMotor.set(SPIT_SPEED_GROUND);
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case FIRE:
+                    changeState(mFireSpeakerPrepState);
+                    break;
+                case PREP_AMP:
+                    changeState(mBenderLoadInternalPrepState);
+                    break;
+                case PREP_SPEAKER_FRONT:
+                    prepSpeakerFront();
+                    break;
+                case PREP_SPEAKER_SIDE:
+                    prepSpeakerSide();
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in LoadedState");
+            }
+        }
+    }
+
+    private class FireSpeakerPrepState extends State {
+        public FireSpeakerPrepState() {
+            super("Fire Speaker Prep");
+        }
+
+        @Override
+        public void enterState() {
+            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
+            mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
+        }
+
+        @Override
+        public void run() {
+            if (mBenderAngleSubsystem.isInSpeakerLocation()) {
+                changeState(mFireSpeakerState);
+            }
+        }
+    }
+
+    private class FireSpeakerState extends State {
+        private double startTime;
+
+        public FireSpeakerState() {
+            super("Fire Speaker");
+        }
+
+        @Override
+        public void enterState() {
+            startTime = Timer.getFPGATimestamp();
+            mShooterFeedMotor.set(SPEAKER_SHOOT_SPEED);
+            mShooterBeltMotor.set(SPEAKER_SHOOT_BELT_SPEED);
+        }
+
+        @Override
+        public void exitState() {
+            stopAllMotors();
+            m_isLoaded = false;
+        }
+
+        @Override
+        public void run() {
+            if ((Timer.getFPGATimestamp() - startTime) > SPEAKER_SHOOTER_DELAY) {
+                changeState(mEmptyState);
+            }
+        }
+    }
+
+    private class BenderLoadInternalPrepState extends State {
+        public BenderLoadInternalPrepState() {
+            super("Bender Load Internal - Prep");
+        }
+
+        @Override
+        public void enterState() {
+            prepAmp();
+        }
+
+        @Override
+        public void run() {
+            if (mBenderAngleSubsystem.isInInternalLoadingLocation()) {
+                changeState(mBenderLoadInternalLoadBenderState);
+            }
+        }
+    }
+
+    private class BenderLoadInternalLoadBenderState extends State {
+        public BenderLoadInternalLoadBenderState() {
+            super("Bender Load Internal - Load Bender");
+        }
+
+        @Override
+        public void enterState() {
+            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED);
+            mShooterBeltMotor.set(LOAD_SPEED_BELT);
+            mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
+            mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
+        }
+
+        @Override
+        public void run() {
+            if (isNoteAtTop()) {
+                changeState(mBenderLoadInternalBenderExitingMiddleState);
+            }
+        }
+    }
+
+    private class BenderLoadInternalBenderExitingMiddleState extends State {
+        public BenderLoadInternalBenderExitingMiddleState() {
+            super("Bender Load Internal - Exiting Middle");
+        }
+
+        @Override
+        public void exitState() {
+            mShooterBeltMotor.set(0);
+            mShooterFeedMotor.set(0);
+            mShooterFlywheelMotor.set(0);
+        }
+
+        @Override
+        public void run() {
+            if (!isNoteAtTop()) {
+                changeState(mBenderLoadInternalLoadedState);
+            }
+        }
+    }
+
+    private class BenderLoadInternalLoadedState extends State {
+        private double feedTimerStart;
+
+        public BenderLoadInternalLoadedState() {
+            super("Bender Load Internal - Loaded");
+        }
+
+        @Override
+        public void enterState() {
+            feedTimerStart = Timer.getFPGATimestamp();
+            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
+            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.AMP);
+            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+        }
+
+        @Override
+        public void run() {
+            if ((Timer.getFPGATimestamp() - feedTimerStart) > AMP_PRELOAD_DELAY) {
+                mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                if (mBenderAngleSubsystem.isInAmpLocation() &&
+                        mShooterAngleSubsystem.isInAmpLocation() &&
+                        mElevatorSubsystem.isAtAmp()) {
+                    changeState(mReadyForFireAmpState);
+                }
+            }
+        }
+    }
+
+    private class ReadyForFireAmpState extends State {
+        public ReadyForFireAmpState() {
+            super("Ready For Fire Amp");
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case FIRE:
+                    changeState(mFireAmpState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in ReadyForFireAmpState");
+                    break;
+            }
+        }
+    }
+
+    private class FireAmpState extends State {
+        private double shootTimerStart;
+
+        public FireAmpState() {
+            super("Fire Amp");
+        }
+
+        @Override
+        public void enterState() {
+            shootTimerStart = Timer.getFPGATimestamp();
+            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+        }
+
+        @Override
+        public void exitState() {
+            m_isLoaded = false;
+            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
+            mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
+        }
+
+        @Override
+        public void run() {
+            if ((Timer.getFPGATimestamp() - shootTimerStart) > AMP_SHOOTER_DELAY) {
+                changeState(mEmptyState);
+            }
+        }
+    }
 
     private static ShooterSubsystem mInstance = null;
 
@@ -107,7 +464,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         sbTab.add("Reset State Machine", new InstantCommand(() -> {
             System.out.print("***** Resetting Shooter State Machine *****");
-            shooterState = ShooterState.EMPTY;
+            currentState = mEmptyState;
         }));
 
         sbTab.addBoolean("GroundFeedSensor", new BooleanSupplier() {
@@ -153,7 +510,7 @@ public class ShooterSubsystem extends SubsystemBase {
         sbTab.addString("Shooter state", new Supplier<String>() {
             @Override
             public String get() {
-                return shooterState.name();
+                return currentState.toString();
             }
         });
 
@@ -162,15 +519,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public void initStateMachine(boolean preloaded) {
         if (preloaded) {
-            changeState(ShooterState.LOADED);
+            changeState(mLoadedState);
         } else {
-            changeState(ShooterState.EMPTY);
+            changeState(mEmptyState);
         }
     }
 
-    private void changeState(ShooterState newState) {
-        System.out.println("** Shooter State: " + shooterState + " --> " + newState);
-        shooterState = newState;
+    private void changeState(State newState) {
+        System.out.println("** Shooter State: " + currentState + " --> " + newState);
+        currentState.exitState();
+        newState.enterState();
+        currentState = newState;
     }
 
     public boolean isHoldingNote() {
@@ -187,142 +546,14 @@ public class ShooterSubsystem extends SubsystemBase {
                 } catch (InterruptedException e) {
                 }
 
-                if (currentEvent == OperatorEvent.SPIT) {
-                    mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
-                    continue;
-                }
-
-                switch (shooterState) {
-                    case EMPTY:
-                        stopAllMotors();
-                        // TODO: if bender is not in default position, shooterState =
-                        // ShooterState.SETBENDERTODEFAULTPOSITION;
-                        // else shooterState = ShooterState.
-                        if (isNoteAtBottom()) {
-                            changeState(ShooterState.ACQUIRINGBOTTOM);
-                        }
-                        if (currentEvent == OperatorEvent.PREP_SPEAKER_FRONT) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepSpeakerFront();
-                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_SIDE) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepSpeakerSide();
-                        }
-
-                        break;
-                    case ACQUIRINGBOTTOM:
-                        acquiringBottom();
-                        if (isNoteAtMiddle()) {
-                            changeState(ShooterState.ACQUIRINGTOP);
-                        }
-                        break;
-                    case ACQUIRINGTOP:
-                        if (!isNoteAtMiddle()) {
-                            m_isLoaded = true;
-                            changeState(ShooterState.LOADED);
-                            mElevatorSubsystem.setPosition(Position.HOME);
-                        }
-                        break;
-                    case LOADED:
-                        stopAllMotors();
-
-                        if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepSpeakerFront();
-                            changeState(ShooterState.FIRE_SPEAKER_PREP);
-                        } else if (currentEvent == OperatorEvent.PREP_AMP) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepAmp();
-                            changeState(ShooterState.BENDER_LOAD_INTERNAL_PREP);
-                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_FRONT) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepSpeakerFront();
-                        } else if (currentEvent == OperatorEvent.PREP_SPEAKER_SIDE) {
-                            currentEvent = OperatorEvent.NONE;
-                            prepSpeakerSide();
-                        }
-                        break;
-
-                    case FIRE_SPEAKER_PREP:
-                        mShooterFlywheelMotor.set(SPEAKER_FLYWHEEL_SHOOT_SPEED);
-                        if (isReadyToShootSpeakerSide() || isReadyToShootSpeakerFront()) {
-                            changeState(ShooterState.FIRE_SPEAKER);
-                            timeCheck = Timer.getFPGATimestamp();
-                        }
-                        break;
-
-                    case FIRE_SPEAKER:
-                        launchSpeaker();
-                        if (isShooterDelayExpired()) {
-                            m_isLoaded = false;
-                            changeState(ShooterState.EMPTY);
-                        }
-                        break;
-
-                    case BENDER_LOAD_INTERNAL_PREP:
-                        if (mBenderAngleSubsystem.isInInternalLoadingLocation()) {
-                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER);
-                        }
-                        break;
-                    case BENDER_LOAD_INTERNAL_LOAD_BENDER:
-                        mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED);
-                        mShooterBeltMotor.set(LOAD_SPEED_BELT);
-                        mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
-                        mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
-                        if (isNoteAtTop()) {
-                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE);
-                        }
-                        break;
-                    case BENDER_LOAD_INTERNAL_LOAD_BENDER_EXITING_MIDDLE:
-                        if (!isNoteAtTop()) {
-                            mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
-                            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.AMP);
-                            //mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
-                            mShooterBeltMotor.set(0);
-                            mShooterFeedMotor.set(0);
-                            mShooterFlywheelMotor.set(0);
-
-                            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
-                            timeCheck = Timer.getFPGATimestamp();
-                            changeState(ShooterState.BENDER_LOAD_INTERNAL_LOADED);
-                        }
-                        break;
-                    case BENDER_LOAD_INTERNAL_LOADED:
-                        if (isAmpShooterPreloadDelayExpired()){
-                            mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
-                            if (mBenderAngleSubsystem.isInAmpLocation() &&
-                                mShooterAngleSubsystem.isInAmpLocation() &&
-                                mElevatorSubsystem.isAtAmp()) {
-                                changeState(ShooterState.READY_FOR_FIRE_AMP);
-                            }
-                        }
-                        break;
-                    case READY_FOR_FIRE_AMP:
-                        // If amp shooter button is pressed
-                        // {timeCheck = Timer.getFPGATimestamp();
-                        // changeState(ShooterState.BENDERSHOOT;)}
-                        if (currentEvent == OperatorEvent.FIRE_SPEAKER) {
-                            changeState(ShooterState.FIRE_AMP);
-                            timeCheck = Timer.getFPGATimestamp();
-                        }
-                        break;
-                    case FIRE_AMP:
-                        mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
-                        if (isAmpShooterDelayExpired()) {
-                            m_isLoaded = false;
-                            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
-                            mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
-                            changeState(ShooterState.EMPTY);
-                        }
-                        break;
-                }
+                // if (currentEvent == OperatorEvent.SPIT) {
+                // mGroundFeedMotor.set(-LOAD_SPEED_GROUND);
+                // continue;
+                // }
+                currentState.run();
             }
         };
     };
-
-    @Override
-    public void periodic() {
-    }
 
     private void prepAmp() {
         mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
@@ -392,32 +623,6 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterAngleSubsystem.stopMotor();
     }
 
-    private boolean isShooterDelayExpired() {
-        // Returns a boolean, where true indicates that the time between the value of
-        // timeCheck and the present time is greater than SHOOTER_DELAY
-        return ((Timer.getFPGATimestamp() - timeCheck) > SPEAKER_SHOOTER_DELAY);
-    }
-
-    private boolean isAmpShooterDelayExpired() {
-        return ((Timer.getFPGATimestamp() - timeCheck) > AMP_SHOOTER_DELAY);
-    }
-
-    private boolean isAmpShooterPreloadDelayExpired() {
-        return ((Timer.getFPGATimestamp() - timeCheck) > AMP_PRELOAD_DELAY);
-    }
-
-    private void acquiringBottom() {
-        mGroundFeedMotor.set(LOAD_SPEED_GROUND);
-        mShooterBeltMotor.set(LOAD_SPEED_BELT);
-        mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
-    }
-
-    private void launchSpeaker() {
-        System.out.println("launchSpeaker");
-        mShooterFeedMotor.set(SPEAKER_SHOOT_SPEED);
-        mShooterBeltMotor.set(SPEAKER_SHOOT_BELT_SPEED);
-    }
-
     private void stopAllMotors() {
         mGroundFeedMotor.set(0);
         mShooterBeltMotor.set(0);
@@ -430,7 +635,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * This method is called to inform the ShooterSubsystem of operator inputs
      */
     public void operatorEvent(OperatorEvent event) {
-        currentEvent = event;
+        currentState.onEvent(event);
     }
 
     public void raiseElevator() {
@@ -461,13 +666,15 @@ public class ShooterSubsystem extends SubsystemBase {
                 mShooterAngleSubsystem.isInSpeakerLocation_front());
     }
 
-    public void raiseBender(){
+    public void raiseBender() {
         mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
     }
-    public void lowerBender(){
+
+    public void lowerBender() {
         mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_INTERNAL);
     }
-    public void stopBenderMotor(){
+
+    public void stopBenderMotor() {
         mBenderAngleSubsystem.stopBender();
     }
 }

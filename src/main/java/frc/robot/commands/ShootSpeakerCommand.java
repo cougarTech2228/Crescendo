@@ -23,11 +23,11 @@ public class ShootSpeakerCommand extends Command {
     public void execute() {
         if (mIsFront) {
             if (mShooter.isReadyToShootSpeakerFront()) {
-                mShooter.operatorEvent(OperatorEvent.FIRE_SPEAKER);
+                mShooter.operatorEvent(OperatorEvent.FIRE);
             }
         } else {
             if (mShooter.isReadyToShootSpeakerSide()) {
-                mShooter.operatorEvent(OperatorEvent.FIRE_SPEAKER);
+                mShooter.operatorEvent(OperatorEvent.FIRE);
             }
         }
     }

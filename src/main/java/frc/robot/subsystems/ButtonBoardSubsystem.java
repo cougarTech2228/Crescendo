@@ -219,7 +219,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         spitButton().onFalse(
                 new InstantCommand(() -> {
                     System.out.println("Spit Button Released");
-                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.NONE);
+                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.SPIT_STOP);
                 }));
 
         prepSpeakerFrontButton().onTrue(
@@ -245,7 +245,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         shootButton().onTrue(
                 new InstantCommand(() -> {
                     System.out.println("Shoot Button Pressed");
-                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.FIRE_SPEAKER);
+                    ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.FIRE);
                 }));
 
         prepAmpButton().onTrue(
