@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -59,9 +60,9 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double SPEAKER_SHOOT_BELT_SPEED = -1;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
-    private final static double BENDER_FEED_SPEED = -1.0;
-    private final static double AMP_SHOOTER_DELAY = 2;
-    private final static double AMP_PRELOAD_DELAY = 1.0;
+    private final static double BENDER_FEED_SPEED = -0.4;
+    private final static double AMP_SHOOTER_DELAY = 0.5;
+    private final static double AMP_PRELOAD_DELAY = 0.25;
 
     /** Abstract State class */
     private abstract class State {
@@ -233,7 +234,7 @@ public class ShooterSubsystem extends SubsystemBase {
             stopAllMotors();
             // run the gound feed motor backwards while loaded to actively reject
             // new pieces from entering the intake
-            mGroundFeedMotor.set(SPIT_SPEED_GROUND);
+            // mGroundFeedMotor.set(SPIT_SPEED_GROUND);
         }
 
         @Override
@@ -270,7 +271,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
         @Override
         public void run() {
-            if (mBenderAngleSubsystem.isInSpeakerLocation()) {
+            double v = mShooterFlywheelMotor.getVelocity().getValue();
+            SmartDashboard.putNumber("Flywheel", v);
+            if (mBenderAngleSubsystem.isInSpeakerLocation() && v >= 102) {
                 changeState(mFireSpeakerState);
             }
         }
@@ -375,7 +378,7 @@ public class ShooterSubsystem extends SubsystemBase {
             feedTimerStart = Timer.getFPGATimestamp();
             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
             mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.AMP);
-            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+            mBenderFeedMotor.set(ControlMode.PercentOutput, -BENDER_FEED_SPEED);
         }
 
         @Override

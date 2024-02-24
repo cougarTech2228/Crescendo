@@ -30,7 +30,7 @@ public class ShooterAngleSubsystem extends SubsystemBase {
     private boolean mAutoEnabled = false;
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 395;
+    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 393;
     private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
 
     /** angle where shooter is able to shoot at the amp */
