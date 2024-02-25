@@ -66,7 +66,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     private final static double BENDER_SHOOT_AMP_LOCATION = 47.6;
 
     /** distance away from expected location that we still concider good */
-    private final static double BENDER_ANGLE_THRESHOLD = 1;
+    private final static double BENDER_ANGLE_THRESHOLD = 2;
 
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
 

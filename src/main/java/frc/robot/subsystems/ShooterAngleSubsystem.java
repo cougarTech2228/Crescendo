@@ -38,7 +38,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private double mGoal = 0;
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 393;
+    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 391;
     private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
 
     /** angle where shooter is able to shoot at the amp */
@@ -51,11 +51,12 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private final static double LOAD_SOURCE_HEIGHT = 378;
 
     private static final double kP = 0.1;
-    private static final double kI = 0.0;
+    private static final double kI = 0.1;
     private static final double kD = 0.01;
     private static final double kDt = 0.01;
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
     private static final double SHOOTER_ANGLE_THRESHOLD = 1;
+    private static final double kIZone = 2;
 
     public enum ShooterPosition {
         SHOOT_SPEAKER_SIDE,
@@ -89,7 +90,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         super(pidController, 0);
 
         pidController.setTolerance(SHOOTER_ANGLE_THRESHOLD);
-        // pidController.setIZone(kIZone);
+        pidController.setIZone(kIZone);
         // pidController.setIntegratorRange(ANGLE_MIN, ANGLE_MAX);
 
         mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorMotorId);
