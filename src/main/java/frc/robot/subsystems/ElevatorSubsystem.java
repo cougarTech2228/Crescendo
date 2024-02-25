@@ -18,6 +18,7 @@ import frc.robot.Robot;
 public class ElevatorSubsystem extends PIDSubsystem {
 
     private static final double ELEVATOR_HEIGHT_AMP = 65;
+    private static final double ELEVATOR_HEIGHT_SOURCE = 80;
     private static final double ELEVATOR_THRESHOLD = 0.5;
 
     private static final double kP = 0.025;
@@ -48,7 +49,8 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     enum Position {
         HOME,
-        AMP
+        AMP,
+        SOURCE
     }
 
     private Position mCurrentPosition = Position.HOME;
@@ -74,7 +76,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
 
-        if (Robot.isDebug) {
+        if (true){//Robot.isDebug) {
             ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
             sbTab.addString("Target position", new Supplier<String>() {
@@ -253,6 +255,10 @@ public class ElevatorSubsystem extends PIDSubsystem {
             target = ELEVATOR_HEIGHT_AMP;
             target = encoderZeroValue - target;
             System.out.println("setting elevator height: " + target);
+        } else if(position == Position.SOURCE){
+            target = ELEVATOR_HEIGHT_SOURCE;
+            target= encoderZeroValue - target;
+            System.out.println("Setting elevator height: " + target);
         }
 
         if (target > getMeasurement()) {

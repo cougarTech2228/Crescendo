@@ -60,7 +60,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
      * angle where bender is positioned so we can load it with a note from the
      * source
      */
-    private final static double BENDER_LOAD_SOURCE_LOCATION = BENDER_INTERNAL_LOAD_NOTE_LOCATION;
+    private final static double BENDER_LOAD_SOURCE_LOCATION = 25.5;
 
     /** angle where bender is in the correct location to shoot into the amp */
     private final static double BENDER_SHOOT_AMP_LOCATION = 47.6;
@@ -97,7 +97,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
         mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (Robot.isDebug) {
+        if (true){//Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
             m_sbTab.addDouble("Encoder", new DoubleSupplier() {

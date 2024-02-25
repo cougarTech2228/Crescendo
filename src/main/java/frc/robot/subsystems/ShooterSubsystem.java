@@ -47,6 +47,7 @@ public class ShooterSubsystem extends SubsystemBase {
         PREP_AMP,
         PREP_SPEAKER_FRONT,
         PREP_SPEAKER_SIDE,
+        PREP_SOURCE,
         FIRE,
         SPIT,
         SPIT_STOP
@@ -61,9 +62,11 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double SPEAKER_SHOOT_BELT_SPEED = -1;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;
-    private final static double BENDER_FEED_SPEED = -0.4;
+    private final static double BENDER_FEED_AMP_SPEED = -0.4;
+    private final static double BENDER_FEED_SOURCE_SPEED = 0.6;
     private final static double AMP_SHOOTER_DELAY = 0.5;
     private final static double AMP_PRELOAD_DELAY = 0.25;
+    private final static double SOURCE_FEED_SPEED = -0.2;
 
     /** Abstract State class */
     private abstract class State {
@@ -116,6 +119,9 @@ public class ShooterSubsystem extends SubsystemBase {
     private PrepSpeakerSideEmptyState mPrepSpeakerSideEmptyState = new PrepSpeakerSideEmptyState();
     private PrepSpeakerFrontLoadedState mPrepSpeakerFrontLoadedState = new PrepSpeakerFrontLoadedState();
     private PrepSpeakerSideLoadedState mPrepSpeakerSideLoadedState = new PrepSpeakerSideLoadedState();
+    private PrepSourceState mPrepSourceState = new PrepSourceState();
+    private SourceLoadingState mSourceLoadingState = new SourceLoadingState();
+    private SourceLoadedState mSourceLoadedState = new SourceLoadedState();
 
     private State currentState = mEmptyState;
 
@@ -147,6 +153,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     break;
                 case SPIT:
                     changeState(mSpitState);
+                    break;
+                case PREP_SOURCE:
+                    changeState(mPrepSourceState);
                 default:
                     System.out.println("Ignoring event " + event + " in Empty State");
             }
@@ -409,7 +418,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         @Override
         public void enterState() {
-            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_SPEED);
+            mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_FEED_AMP_SPEED);
             mShooterBeltMotor.set(LOAD_SPEED_BELT);
             mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
             mShooterFlywheelMotor.set(LOAD_SPEED_SHOOTER_FEED);
@@ -455,7 +464,7 @@ public class ShooterSubsystem extends SubsystemBase {
             feedTimerStart = Timer.getFPGATimestamp();
             mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_AMP);
             mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.AMP);
-            mBenderFeedMotor.set(ControlMode.PercentOutput, -BENDER_FEED_SPEED);
+            mBenderFeedMotor.set(ControlMode.PercentOutput, -BENDER_FEED_AMP_SPEED);
         }
 
         @Override
@@ -513,6 +522,55 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if ((Timer.getFPGATimestamp() - shootTimerStart) > AMP_SHOOTER_DELAY) {
                 changeState(mEmptyState);
+            }
+        }
+    }
+
+    private class PrepSourceState extends State {
+        public PrepSourceState() {
+            super("Prep Source");
+        }
+
+        @Override
+        public void enterState(){
+            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.SOURCE);
+            mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_SOURCE);
+            mShooterAngleSubsystem.setPosition(ShooterPosition.LOAD_SOURCE);
+            feedSource();
+        }
+
+        @Override
+        public void run(){
+            if(isNoteAtTop()){
+                changeState(mSourceLoadingState);
+            }
+        }
+    }
+
+    private class SourceLoadingState extends State {
+        public SourceLoadingState(){
+            super("Source Loading");
+        }
+
+        @Override
+        public void run(){
+            if(!isNoteAtTop()){
+                changeState(mSourceLoadedState);
+            }
+        }
+    }
+
+    private class SourceLoadedState extends State {
+        public SourceLoadedState(){
+            super("Source Loaded");
+        }
+
+        @Override
+        public void run(){
+            if(isNoteAtMiddle()){
+                changeState(mLoadedState);
+                stopBenderMotor();
+                prepSpeakerFront();
             }
         }
     }
@@ -645,12 +703,14 @@ public class ShooterSubsystem extends SubsystemBase {
     private void prepSpeakerFront() {
         mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
         mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_FRONT);
+        mElevatorSubsystem.setPosition(Position.HOME);
     }
 
     private void prepSpeakerSide() {
         mBenderAngleSubsystem.setBenderPosition(BenderPosition.SHOOT_SPEAKER);
         mShooterAngleSubsystem.setPosition(ShooterPosition.SHOOT_SPEAKER_SIDE);
-    }
+        mElevatorSubsystem.setPosition(Position.HOME);
+}
 
     /**
      * @return true if a note is at the front of the intake
@@ -757,7 +817,14 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void stopBenderMotor() {
-        mBenderAngleSubsystem.stopBender();
+        mBenderFeedMotor.set(TalonSRXControlMode.PercentOutput, 0);
+    }
+
+    public void feedSource(){
+        mBenderFeedMotor.set(TalonSRXControlMode.PercentOutput, BENDER_FEED_SOURCE_SPEED);
+        mShooterFlywheelMotor.set(SOURCE_FEED_SPEED);
+        mShooterFeedMotor.set(SOURCE_FEED_SPEED);
+        mShooterBeltMotor.set(-SOURCE_FEED_SPEED);
     }
 
     public void forceLoaded() {

@@ -237,7 +237,7 @@ public class ButtonBoardSubsystem extends SubsystemBase {
         test2Button().onTrue(
             new InstantCommand(() -> {
                 System.out.println("Test 2 Pressed");
-                ShooterSubsystem.getInstance().setLinearActuatorPosition(ShooterPosition.HEIGHT_CHAIN);
+                ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.PREP_SOURCE);
                 
             })
         );
@@ -285,24 +285,10 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             })
         );
 
-        raiseBenderButton().onFalse(
-            new InstantCommand(() -> {
-                System.out.println("Raise Bender Button Released");
-                ShooterSubsystem.getInstance().stopBenderMotor();
-            })
-        );
-
         lowerBenderButton().onTrue(
             new InstantCommand(() -> {
                 System.out.println("Lower Bender Button Pressed");
                 ShooterSubsystem.getInstance().lowerBender();
-            })
-        );
-
-        lowerBenderButton().onFalse(
-            new InstantCommand(() -> {
-                System.out.println("Lower Bender Button Released");
-                ShooterSubsystem.getInstance().stopBenderMotor();
             })
         );
     }

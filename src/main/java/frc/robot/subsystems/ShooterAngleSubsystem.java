@@ -48,7 +48,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private final static double UNDER_CHAIN_ANGLE = 411;
 
     /** angle where shooter is in the correct location to load from source */
-    private final static double LOAD_SOURCE_HEIGHT = 378;
+    private final static double LOAD_SOURCE_HEIGHT = 370;
 
     private static final double kP = 0.1;
     private static final double kI = 0.1;
@@ -97,7 +97,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (Robot.isDebug) {
+        if (true){//Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Shooter Angle (Debug)");
 
             m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
