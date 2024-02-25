@@ -759,4 +759,12 @@ public class ShooterSubsystem extends SubsystemBase {
     public void stopBenderMotor() {
         mBenderAngleSubsystem.stopBender();
     }
+
+    public void forceLoaded() {
+        currentState = mLoadedState;
+    }
+
+    public void forceEmpty() {
+        currentState = mEmptyState;
+    }
 }

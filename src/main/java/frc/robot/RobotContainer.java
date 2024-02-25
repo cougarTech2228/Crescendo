@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.ShootSpeakerCommand;
 import frc.robot.subsystems.AprilTagSubsystem;
@@ -98,7 +99,7 @@ public class RobotContainer {
               };
             }));
 
-    joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+    // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
     // joystick.b().whileTrue(drivetrain
     // .applyRequest(() -> point.withModuleDirection(new
     // Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
@@ -106,6 +107,13 @@ public class RobotContainer {
     // reset the field-centric heading on left bumper press
     joystick.leftBumper().onTrue(drivetrain.runOnce(() -> {
       drivetrain.seedFieldRelative(new Pose2d());
+    }));
+
+    joystick.a().onTrue(new InstantCommand(() -> {
+      shooter.forceLoaded();
+    }));
+    joystick.y().onTrue(new InstantCommand(() -> {
+      shooter.forceEmpty();
     }));
 
     // joystick.y().onTrue(new InstantCommand(() -> {
@@ -176,8 +184,7 @@ public class RobotContainer {
     autoChooser.addOption("Shoot Front", shootFrontCommand);
     autoChooser.addOption("Shoot Side", shootSideCommand);
 
-    // FIXME get the right video URL here
-    sbTab.addCamera("Driver Camera", "test", "mjpg:http://10.22.28.11:1181/?action=stream4")
+    sbTab.addCamera("Driver Camera", "Driver Camera", "mjpg:http://10.22.28.11:1182/?action=stream")
       .withProperties(Map.of("showControls", false))
       .withPosition(0, 0)
       .withSize(5, 5);
