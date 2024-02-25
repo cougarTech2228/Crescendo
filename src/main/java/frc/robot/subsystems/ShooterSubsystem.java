@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 import frc.robot.subsystems.ElevatorSubsystem.Position;
 import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
@@ -88,7 +89,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         protected void onEventInternal(OperatorEvent event) {
             System.out.println("Ingoring Event " + event + " in state " + mName +
-                ", onEventInernal not overridden!");
+                    ", onEventInernal not overridden!");
         }
 
         @Override
@@ -111,6 +112,10 @@ public class ShooterSubsystem extends SubsystemBase {
     private ReadyForFireAmpState mReadyForFireAmpState = new ReadyForFireAmpState();
     private FireAmpState mFireAmpState = new FireAmpState();
     private SpitState mSpitState = new SpitState();
+    private PrepSpeakerFrontEmptyState mPrepSpeakerFrontEmptyState = new PrepSpeakerFrontEmptyState();
+    private PrepSpeakerSideEmptyState mPrepSpeakerSideEmptyState = new PrepSpeakerSideEmptyState();
+    private PrepSpeakerFrontLoadedState mPrepSpeakerFrontLoadedState = new PrepSpeakerFrontLoadedState();
+    private PrepSpeakerSideLoadedState mPrepSpeakerSideLoadedState = new PrepSpeakerSideLoadedState();
 
     private State currentState = mEmptyState;
 
@@ -135,10 +140,10 @@ public class ShooterSubsystem extends SubsystemBase {
         public void onEventInternal(OperatorEvent event) {
             switch (event) {
                 case PREP_SPEAKER_FRONT:
-                    prepSpeakerFront();
+                    changeState(mPrepSpeakerFrontEmptyState);
                     break;
                 case PREP_SPEAKER_SIDE:
-                    prepSpeakerSide();
+                    changeState(mPrepSpeakerSideEmptyState);
                     break;
                 case SPIT:
                     changeState(mSpitState);
@@ -247,13 +252,85 @@ public class ShooterSubsystem extends SubsystemBase {
                     changeState(mBenderLoadInternalPrepState);
                     break;
                 case PREP_SPEAKER_FRONT:
-                    prepSpeakerFront();
+                    changeState(mPrepSpeakerFrontLoadedState);
                     break;
                 case PREP_SPEAKER_SIDE:
-                    prepSpeakerSide();
+                    changeState(mPrepSpeakerSideLoadedState);
                     break;
                 default:
                     System.out.println("Ignoring event " + event + " in LoadedState");
+            }
+        }
+    }
+
+    private class PrepSpeakerFrontEmptyState extends State{
+        public PrepSpeakerFrontEmptyState(){
+            super("Prep Speaker Front Empty");
+        }
+
+        @Override
+        public void enterState(){
+            prepSpeakerFront();
+        }
+
+        @Override
+        public void run(){
+            if(mShooterAngleSubsystem.isInSpeakerLocation_front()){
+                changeState(mEmptyState);
+            }
+        }
+    }
+
+    private class PrepSpeakerSideEmptyState extends State{
+        public PrepSpeakerSideEmptyState(){
+            super("Prep Speaker Side Empty");
+        }
+
+        @Override
+        public void enterState(){
+            prepSpeakerSide();
+        }
+
+        @Override
+        public void run(){
+            if(mShooterAngleSubsystem.isInSpeakerLocation_side()){
+                changeState(mEmptyState);
+            }
+        }
+    }
+
+    private class PrepSpeakerFrontLoadedState extends State{
+        public PrepSpeakerFrontLoadedState(){
+            super("Prep Speaker Front Loaded");
+        }
+
+        @Override
+        public void enterState(){
+            prepSpeakerFront();
+        }
+
+        @Override
+        public void run(){
+            if(mShooterAngleSubsystem.isInSpeakerLocation_front()){
+                changeState(mLoadedState);
+            }
+        }
+    }
+
+    private class PrepSpeakerSideLoadedState extends State{
+        public PrepSpeakerSideLoadedState(){
+            super("Prep Speaker Side Loaded");
+        }
+
+        @Override
+        public void enterState(){
+            prepSpeakerSide();
+        }
+
+        @Override
+        public void run(){
+            if(mShooterAngleSubsystem.isInSpeakerLocation_side()){
+                changeState(mLoadedState);
             }
         }
     }
@@ -463,59 +540,61 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
         mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
 
-        ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
+        if (Robot.isDebug) {
+            ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
 
-        sbTab.add("Reset State Machine", new InstantCommand(() -> {
-            System.out.print("***** Resetting Shooter State Machine *****");
-            currentState = mEmptyState;
-        }));
+            sbTab.add("Reset State Machine", new InstantCommand(() -> {
+                System.out.print("***** Resetting Shooter State Machine *****");
+                currentState = mEmptyState;
+            }));
 
-        sbTab.addBoolean("GroundFeedSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isNoteAtBottom();
-            };
-        });
+            sbTab.addBoolean("GroundFeedSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isNoteAtBottom();
+                };
+            });
 
-        sbTab.addBoolean("MiddleFeedSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isNoteAtMiddle();
-            };
-        });
+            sbTab.addBoolean("MiddleFeedSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isNoteAtMiddle();
+                };
+            });
 
-        sbTab.addBoolean("TopFeedSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isNoteAtTop();
-            };
-        });
+            sbTab.addBoolean("TopFeedSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isNoteAtTop();
+                };
+            });
 
-        sbTab.addBoolean("Bender In Amp Location", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return mBenderAngleSubsystem.isInAmpLocation();
-            };
-        });
-        sbTab.addBoolean("shooterIsInAmpLocation", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return mShooterAngleSubsystem.isInAmpLocation();
-            };
-        });
-        sbTab.addBoolean("elevatorIsInAmpLocation", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return mElevatorSubsystem.isAtAmp();
-            };
-        });
+            sbTab.addBoolean("Bender In Amp Location", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return mBenderAngleSubsystem.isInAmpLocation();
+                };
+            });
+            sbTab.addBoolean("shooterIsInAmpLocation", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return mShooterAngleSubsystem.isInAmpLocation();
+                };
+            });
+            sbTab.addBoolean("elevatorIsInAmpLocation", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return mElevatorSubsystem.isAtAmp();
+                };
+            });
 
-        sbTab.addString("Shooter state", new Supplier<String>() {
-            @Override
-            public String get() {
-                return currentState.toString();
-            }
-        });
+            sbTab.addString("Shooter state", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return currentState.toString();
+                }
+            });
+        }
 
         stateMachineThread.start();
     }

@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
+import frc.robot.Robot;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -72,63 +73,66 @@ public class ElevatorSubsystem extends PIDSubsystem {
         mElevatorMotor.setNeutralMode(NeutralModeValue.Brake);
         mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
-        ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
-        sbTab.addString("Target position", new Supplier<String>() {
-            @Override
-            public String get() {
-                return mCurrentPosition.toString();
-            }
-        });
+        if (Robot.isDebug) {
+            ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
-        sbTab.addDouble("PID goal", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_controller.getSetpoint();
-            };
-        });
+            sbTab.addString("Target position", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return mCurrentPosition.toString();
+                }
+            });
 
-        sbTab.addDouble("PID output", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mElevatorMotor.getMotorVoltage().getValue();
-            };
-        });
+            sbTab.addDouble("PID goal", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return m_controller.getSetpoint();
+                };
+            });
 
-        sbTab.addDouble("Current Angle:", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mCurrentMeasurement;
-            };
-        });
+            sbTab.addDouble("PID output", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return mElevatorMotor.getMotorVoltage().getValue();
+                };
+            });
 
-        sbTab.addBoolean("ElevatorTopSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isElevatorAtTop();
-            };
-        });
+            sbTab.addDouble("Current Angle:", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return mCurrentMeasurement;
+                };
+            });
 
-        sbTab.addBoolean("ElevatorBottomSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isElevatorAtBottom();
-            };
-        });
+            sbTab.addBoolean("ElevatorTopSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isElevatorAtTop();
+                };
+            });
 
-        sbTab.addString("Elevator state", new Supplier<String>() {
-            @Override
-            public String get() {
-                return mCurrentState.name();
-            }
-        });
+            sbTab.addBoolean("ElevatorBottomSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isElevatorAtBottom();
+                };
+            });
 
-        sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isEnabled();
-            };
-        });
+            sbTab.addString("Elevator state", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return mCurrentState.name();
+                }
+            });
+
+            sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isEnabled();
+                };
+            });
+        }
     }
 
     private boolean isDisabled = DriverStation.isDisabled();

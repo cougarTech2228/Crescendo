@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
+import frc.robot.Robot;
 
 public class BenderAngleSubsystem extends PIDSubsystem {
 
@@ -96,65 +97,67 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
         mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
 
-        m_sbTab = Shuffleboard.getTab("Bender (Debug)");
+        if (Robot.isDebug) {
+            m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
-        m_sbTab.addDouble("Encoder", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_benderAngleEncoder.getAbsolutePosition();
-            };
-        });
+            m_sbTab.addDouble("Encoder", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return m_benderAngleEncoder.getAbsolutePosition();
+                };
+            });
 
-        m_sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isEnabled();
-            };
-        });
+            m_sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isEnabled();
+                };
+            });
 
-        m_sbTab.addBoolean("Lower", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isBenderLowerLimitReached();
-            };
-        });
+            m_sbTab.addBoolean("Lower", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isBenderLowerLimitReached();
+                };
+            });
 
-        m_sbTab.addBoolean("Upper", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isBenderUpperLimitReached();
-            };
-        });
+            m_sbTab.addBoolean("Upper", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isBenderUpperLimitReached();
+                };
+            });
 
-        m_sbTab.addString("Target position", new Supplier<String>() {
-            @Override
-            public String get() {
-                return m_currentTargetPosition.toString();
-            }
-        });
+            m_sbTab.addString("Target position", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return m_currentTargetPosition.toString();
+                }
+            });
 
-        m_sbTab.addDouble("PID goal", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_controller.getSetpoint();
-            };
-        });
+            m_sbTab.addDouble("PID goal", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return m_controller.getSetpoint();
+                };
+            });
 
-        m_sbTab.addDouble("PID output", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mBenderTiltMotor.getMotorOutputVoltage();
-            };
-        });
+            m_sbTab.addDouble("PID output", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return mBenderTiltMotor.getMotorOutputVoltage();
+                };
+            });
 
-        m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return m_benderAngle;
-            };
-        });
+            m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return m_benderAngle;
+                };
+            });
 
-        m_sbTab.add(pidController);
+            m_sbTab.add(pidController);
+        }
 
         new Thread("benderAngleEncoder") {
             public void run() {
@@ -288,8 +291,8 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     public void raiseBender() {
         disable();
         System.out.println("called raise elevator");
-        if(!isBenderUpperLimitReached()) {
-            //mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, BENDER_SPEED);
+        if (!isBenderUpperLimitReached()) {
+            // mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, BENDER_SPEED);
             m_benderState = BenderState.raising;
             System.out.println("raising bender");
         }
@@ -298,7 +301,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
     public void lowerBender() {
         disable();
         System.out.println("called lower elevator");
-        if(!isBenderLowerLimitReached()) {
+        if (!isBenderLowerLimitReached()) {
             mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -BENDER_SPEED);
             m_benderState = BenderState.lowering;
             System.out.println("lowering");

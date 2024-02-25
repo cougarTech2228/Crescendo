@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 
 public class ClimberSubsystem extends SubsystemBase {
 
@@ -43,28 +44,30 @@ public class ClimberSubsystem extends SubsystemBase {
         mClimberBottomSensor = new DigitalInput(Constants.kClimberBottomSensorId);
         mClimberMotor.setNeutralMode(NeutralModeValue.Brake);
 
-        ShuffleboardTab m_sbTab = Shuffleboard.getTab("Climber (Debug)");
+        if (Robot.isDebug) {
+            ShuffleboardTab m_sbTab = Shuffleboard.getTab("Climber (Debug)");
 
-        m_sbTab.addBoolean("ClimberTopSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isClimberAtTop();
-            };
-        });
+            m_sbTab.addBoolean("ClimberTopSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isClimberAtTop();
+                };
+            });
 
-        m_sbTab.addBoolean("ClimberBottomSensor", new BooleanSupplier() {
-            @Override
-            public boolean getAsBoolean() {
-                return isClimberAtBottom();
-            };
-        });
+            m_sbTab.addBoolean("ClimberBottomSensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isClimberAtBottom();
+                };
+            });
 
-        m_sbTab.addDouble("Climber voltage", new DoubleSupplier() {
-            @Override
-            public double getAsDouble() {
-                return mClimberMotor.getMotorVoltage().getValue();
-            };
-        });
+            m_sbTab.addDouble("Climber voltage", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return mClimberMotor.getMotorVoltage().getValue();
+                };
+            });
+        }
     }
 
     @Override
