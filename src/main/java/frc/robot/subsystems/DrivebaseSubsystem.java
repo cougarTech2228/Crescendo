@@ -71,7 +71,7 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
 
     private HolonomicPathFollowerConfig pathFollowerConfig = new HolonomicPathFollowerConfig(
             new PIDConstants(1, 0, 0.1),
-            new PIDConstants(5.1, 0, 0.0),
+            new PIDConstants(0.070292, 0, 0.0),
             MODULE_MAX_SPEED,
             DRIVEBASE_RADIUS_METERS,
             new ReplanningConfig(true, true),

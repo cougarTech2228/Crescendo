@@ -32,8 +32,8 @@ import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.subsystems.ClimberSubsystem;
 
 public class RobotContainer {
-  private double MaxSpeed = 4; // 6 meters per second desired top speed
-  private double MaxAngularRate = Math.PI; // Half a rotation per second max angular velocity
+  private double MaxSpeed = 4.4; // 6 meters per second desired top speed
+  private double MaxAngularRate = Math.PI*2; // Half a rotation per second max angular velocity
   private Servo driverCameraTiltPWM = new Servo(Constants.kDriverCameraPWMID);
   private double driverCameraTilt;
   private final double driverCameraTiltChange = 0.01;
