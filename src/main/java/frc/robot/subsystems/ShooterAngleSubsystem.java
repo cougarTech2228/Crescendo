@@ -13,6 +13,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
@@ -186,8 +187,12 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
             return;
         }
 
+        int speakerID = 7; // Blue speaker Apriltag ID
+        if (DriverStation.getAlliance().get() == Alliance.Red) {
+            speakerID = 8;
+        }
         Pose2d currentPose = mDrivebaseSubsystem.getCurrentPose();
-        Pose2d speakerPose = mAprilTagSubsystem.aprilTagFieldLayout.getTagPose(7).get().toPose2d();
+        Pose2d speakerPose = mAprilTagSubsystem.aprilTagFieldLayout.getTagPose(speakerID).get().toPose2d();
 
         mDistanceToSpeaker = currentPose.getTranslation().getDistance(speakerPose.getTranslation());
         

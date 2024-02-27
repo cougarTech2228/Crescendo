@@ -28,7 +28,6 @@ import frc.robot.generated.TunerConstants;
  */
 public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double DRIVEBASE_RADIUS_METERS = 0.45085;
-    private static final double MODULE_MAX_SPEED = 3.642; // M/s
     private static final double STATOR_CURRENT_LIMIT = 60.0; // Amps
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
@@ -70,9 +69,9 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     }
 
     private HolonomicPathFollowerConfig pathFollowerConfig = new HolonomicPathFollowerConfig(
-            new PIDConstants(1, 0, 0.1),
             new PIDConstants(0.070292, 0, 0.0),
-            MODULE_MAX_SPEED,
+            new PIDConstants(5.1, 0, 0.0),
+            TunerConstants.kSpeedAt12VoltsMps,
             DRIVEBASE_RADIUS_METERS,
             new ReplanningConfig(true, true),
             0.004);
