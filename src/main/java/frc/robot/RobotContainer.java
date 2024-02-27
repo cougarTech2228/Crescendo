@@ -38,6 +38,20 @@ public class RobotContainer {
   private double driverCameraTilt;
   private final double driverCameraTiltChange = 0.01;
 
+
+  private final SendableChooser<String> m_auto_chooser = new SendableChooser<>();
+  private static final String kAutoNone = "None";
+  private static final String kAutoLeave = "DriveForward_2m";
+  private static final String kAutoShoot_F = "Shoot_F";
+  private static final String kAutoShoot_S = "Shoot_S";
+  private static final String kAutoPos1_1_4 = "Pos1_1_4";
+  private static final String kAutoPos2_2_1 = "Pos2_2_1";
+  private static final String kAutoPos2_2_3 = "Pos2_2_3";
+  private static final String kAutoPos2_2_5 = "Pos2_2_5";
+  private static final String kAutoPos2_2_3_1 = "Pos2_2_3_1";
+  private static final String kAutoPos3_8 = "Pos3_8";
+  
+
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final CommandXboxController joystick = new CommandXboxController(0);
   public final DrivebaseSubsystem drivetrain = DrivebaseSubsystem.getInstance();
@@ -56,7 +70,7 @@ public class RobotContainer {
 
   /* Path follower */
   private final Telemetry logger = new Telemetry(MaxSpeed);
-  private final SendableChooser<Command> autoChooser;
+  //private final SendableChooser<Command> autoChooser;
 
   Command shootFrontCommand = new ShootSpeakerCommand(true);
   Command shootSideCommand = new ShootSpeakerCommand(false);
@@ -176,13 +190,17 @@ public class RobotContainer {
 
     ShuffleboardTab sbTab = Shuffleboard.getTab("Driver");
 
-    autoChooser = AutoBuilder.buildAutoChooser(); // Default auto will be `Commands.none()`
-    sbTab.add("Auto Mode", autoChooser)
-      .withSize(2, 1)
-      .withPosition(6, 0);
-
-    autoChooser.addOption("Shoot Front", shootFrontCommand);
-    autoChooser.addOption("Shoot Side", shootSideCommand);
+    m_auto_chooser.setDefaultOption("None", kAutoNone);
+    m_auto_chooser.addOption("Leave", kAutoLeave);
+    m_auto_chooser.addOption("Shoot_F", kAutoShoot_F);
+    m_auto_chooser.addOption("Shoot_S", kAutoShoot_S);
+    m_auto_chooser.addOption("Pos1_1_4", kAutoPos1_1_4);
+    m_auto_chooser.addOption("Pos2_2_1", kAutoPos2_2_1);
+    m_auto_chooser.addOption("Pos2_2_3", kAutoPos2_2_3);
+    m_auto_chooser.addOption("Pos2_2_5", kAutoPos2_2_5);
+    m_auto_chooser.addOption("Pos2_2_3_1", kAutoPos2_2_3_1);
+    m_auto_chooser.addOption("Pos3_8", kAutoPos3_8);
+    SmartDashboard.putData("Auto Choices", m_auto_chooser);
 
     sbTab.addCamera("Driver Camera", "Driver Camera", "mjpg:http://10.22.28.11:1182/?action=stream")
       .withProperties(Map.of("showControls", false))
@@ -193,7 +211,17 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    return autoCommand;
+  }
+
+  private String lastAutoChoice;
+  private Command autoCommand = null;
+  public void disabledPeriodic(){
+    if(m_auto_chooser.getSelected() != lastAutoChoice){
+      lastAutoChoice = m_auto_chooser.getSelected();
+      System.out.println("Building Auto: " + lastAutoChoice);
+      autoCommand = AutoBuilder.buildAuto(lastAutoChoice);
+    }
   }
 
   public void periodic() {
