@@ -134,12 +134,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private void setLEDRed() {
         canifier.setLEDOutput(1, LEDChannel.LEDChannelA);
+        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
+        canifier.setLEDOutput(0, LEDChannel.LEDChannelC);
     }
     private void setLEDGreen() {
+        canifier.setLEDOutput(0, LEDChannel.LEDChannelA);
+        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
         canifier.setLEDOutput(1, LEDChannel.LEDChannelC);
     }
     private void setLEDOrange() {
         canifier.setLEDOutput(0.929, LEDChannel.LEDChannelA);
+        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
         canifier.setLEDOutput(0.686, LEDChannel.LEDChannelC);
     }
 
