@@ -681,6 +681,7 @@ public class ShooterSubsystem extends SubsystemBase {
             });
         }
 
+        mEmptyState.enterState();
         stateMachineThread.start();
     }
 
