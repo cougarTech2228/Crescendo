@@ -39,6 +39,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private double mGoal = 0;
 
     /** angle where shooter is able to shoot at the speaker */
+    private final static double SHOOTER_ELEVATOR_LIMIT = 396;
     private final static double SHOOT_SPEAKER_SIDE_ANGLE = 391;
     private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
 
@@ -214,6 +215,16 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         //     mCurrentState = State.STOPPED;
         //     stopMotor();
         // }
+
+        System.out.println("meas: " + getMeasurement() + ", limit: " + SHOOTER_ELEVATOR_LIMIT);
+        if(getMeasurement() >= SHOOTER_ELEVATOR_LIMIT){
+            ShooterSubsystem.isShooterLimit = true;
+            System.out.println("ShooterLimit: " + ShooterSubsystem.isShooterLimit);
+        }
+        else {
+            ShooterSubsystem.isShooterLimit = false;
+            System.out.println("ShooterLimit: " + ShooterSubsystem.isShooterLimit);
+        }
     }
 
     private boolean atGoal() {
@@ -238,9 +249,11 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     public void lowerShooter() {
         // Moves the shooter down
         System.out.println("called lower shooter");
-        disable();
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
-        System.out.println("lowering");
+        if(ShooterSubsystem.isElevatorHome){
+            disable();
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
+            System.out.println("lowering");
+        }
     }
 
     public boolean isInSpeakerLocation_front() {

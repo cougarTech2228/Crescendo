@@ -46,6 +46,8 @@ public class ShooterSubsystem extends SubsystemBase {
     double timeCheck;
 
     private boolean m_isLoaded = false;
+    public static boolean isShooterLimit = false;
+    public static boolean isElevatorHome = false;
 
     public enum OperatorEvent {
         NONE,

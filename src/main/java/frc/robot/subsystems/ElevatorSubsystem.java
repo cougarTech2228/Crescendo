@@ -179,6 +179,14 @@ public class ElevatorSubsystem extends PIDSubsystem {
             mCurrentState = State.STOPPED;
             mCurrentPosition = Position.HOME;
         }
+
+        if(isElevatorAtBottom()){
+            ShooterSubsystem.isElevatorHome = true;
+            System.out.println("Elevator Home: " + ShooterSubsystem.isElevatorHome);
+        } else {
+            ShooterSubsystem.isElevatorHome = false;
+            System.out.println("Elevator Home: " + ShooterSubsystem.isElevatorHome);
+        }
     }
 
     public boolean isElevatorAtBottom() {
@@ -207,8 +215,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // setPosition(Position.AMP);
         // Moves the elevator
         System.out.println("called raise elevator");
-        disable();
-        if (!isElevatorAtTop()) {
+        if (!isElevatorAtTop() && !ShooterSubsystem.isShooterLimit) {
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
             mCurrentState = State.RAISING;
