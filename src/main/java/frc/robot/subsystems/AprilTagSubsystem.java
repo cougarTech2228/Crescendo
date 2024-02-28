@@ -72,7 +72,6 @@ public class AprilTagSubsystem extends SubsystemBase {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
                 PhotonPipelineResult res = camera.getLatestResult();
