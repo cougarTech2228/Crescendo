@@ -188,7 +188,7 @@ public class RobotContainer {
     configureBindings();
     buttonBoardSubsystem.configureButtonBindings();
 
-    ShuffleboardTab sbTab = Shuffleboard.getTab("Driver");
+    ShuffleboardTab driverTab = Shuffleboard.getTab("Driver");
 
     m_auto_chooser.setDefaultOption("None", kAutoNone);
     m_auto_chooser.addOption("Leave", kAutoLeave);
@@ -200,9 +200,11 @@ public class RobotContainer {
     m_auto_chooser.addOption("Pos2_2_5", kAutoPos2_2_5);
     m_auto_chooser.addOption("Pos2_2_3_1", kAutoPos2_2_3_1);
     m_auto_chooser.addOption("Pos3_8", kAutoPos3_8);
-    SmartDashboard.putData("Auto Choices", m_auto_chooser);
+    driverTab.add("Auto Chooser", m_auto_chooser)
+      .withPosition(6, 0)
+      .withSize(2,1);
 
-    sbTab.addCamera("Driver Camera", "Driver Camera", "mjpg:http://10.22.28.11:1182/?action=stream")
+    driverTab.addCamera("Driver Camera", "Driver Camera", "mjpg:http://10.22.28.11:1182/?action=stream")
       .withProperties(Map.of("showControls", false))
       .withPosition(0, 0)
       .withSize(5, 5);

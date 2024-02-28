@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -37,6 +38,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private double mPidOutput = 0;
 
     private double mGoal = 0;
+    private Pose2d mSpeakerPose = null;
 
     /** angle where shooter is able to shoot at the speaker */
     private final static double SHOOTER_ELEVATOR_LIMIT = 396;
@@ -168,6 +170,22 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
 
     private boolean isDisabled = DriverStation.isDisabled();
 
+    Optional<Alliance> lastAliance = Optional.empty();
+
+    private void updateSpeakerTag() {
+        Optional<Alliance> currentAliance = DriverStation.getAlliance();
+        if (!currentAliance.equals(lastAliance)) {
+            System.out.println ("Alliance Change: " + currentAliance);
+            lastAliance = currentAliance;
+
+            int speakerID = 7; // Blue speaker Apriltag ID
+            if (DriverStation.getAlliance().get() == Alliance.Red) {
+                speakerID = 8;
+            }
+            mSpeakerPose = mAprilTagSubsystem.aprilTagFieldLayout.getTagPose(speakerID).get().toPose2d();
+        }
+    }
+
     @Override
     public void periodic() {
         super.periodic();
@@ -187,34 +205,6 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
             stopMotor();
             return;
         }
-
-        int speakerID = 7; // Blue speaker Apriltag ID
-        if (DriverStation.getAlliance().get() == Alliance.Red) {
-            speakerID = 8;
-        }
-        Pose2d currentPose = mDrivebaseSubsystem.getCurrentPose();
-        Pose2d speakerPose = mAprilTagSubsystem.aprilTagFieldLayout.getTagPose(speakerID).get().toPose2d();
-
-        mDistanceToSpeaker = currentPose.getTranslation().getDistance(speakerPose.getTranslation());
-        
-        //y = -65.034x3 + 371.79x2 - 649.68x + 733.47
-
-        mAutoAngle  = (-65.034 * (mDistanceToSpeaker * mDistanceToSpeaker * mDistanceToSpeaker)) +
-            (371.79 * (mDistanceToSpeaker * mDistanceToSpeaker)) -
-            (649.68 * mDistanceToSpeaker) +
-            733.47;
-
-        // pidController.setSetpoint(mAutoAngle);
-        // enable();
-        
-        // if ((m_shooterAngle < SHOOTER_ANGLE_MIN_LIMIT) && (mCurrentState == State.RAISING)) {
-        //     mCurrentState = State.STOPPED;
-        //     stopMotor();
-        // }
-        // if ((m_shooterAngle > SHOOTER_ANGLE_MAX_LIMIT) && (mCurrentState == State.LOWERING)) {
-        //     mCurrentState = State.STOPPED;
-        //     stopMotor();
-        // }
 
         if(getMeasurement() >= SHOOTER_ELEVATOR_LIMIT){
             ShooterSubsystem.isShooterLimit = true;
@@ -292,7 +282,20 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
                 mGoal = SHOOT_AMP_ANGLE;
                 break;
             case SHOOT_PID:
-                mGoal = mAutoAngle;
+                {
+                    updateSpeakerTag();
+                    if (mSpeakerPose != null) {
+                        Pose2d currentPose = mDrivebaseSubsystem.getCurrentPose();
+                        mDistanceToSpeaker = currentPose.getTranslation().getDistance(mSpeakerPose.getTranslation());
+
+                        //y = -65.034x3 + 371.79x2 - 649.68x + 733.47
+                        mAutoAngle  = (-65.034 * (mDistanceToSpeaker * mDistanceToSpeaker * mDistanceToSpeaker)) +
+                            (371.79 * (mDistanceToSpeaker * mDistanceToSpeaker)) -
+                            (649.68 * mDistanceToSpeaker) +
+                            733.47;
+                    }
+                    mGoal = mAutoAngle;
+                }
                 break;
         }
 

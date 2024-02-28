@@ -625,6 +625,16 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
         mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
 
+        ShuffleboardTab driverTab = Shuffleboard.getTab("Driver");
+        driverTab.addString("Shooter state", new Supplier<String>() {
+                @Override
+                public String get() {
+                    return currentState.toString();
+                }
+            })
+            .withPosition(6,1)
+            .withSize(2,1);
+
         if (Robot.isDebug) {
             ShuffleboardTab sbTab = Shuffleboard.getTab("Shooter (Debug)");
 

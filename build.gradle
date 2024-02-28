@@ -29,6 +29,17 @@ deploy {
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
                 }
 
+                // Uncomment for debugging support
+                // frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                //     // Enable VisualVM connection
+                //     jvmArgs.add("-Dcom.sun.management.jmxremote=true")
+                //     jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
+                //     jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
+                //     jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
+                //     jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
+                //     jvmArgs.add("-Djava.rmi.server.hostname=10.22.28.2") // Replace XX.XX with team number
+                // }
+
                 // Static files artifact
                 frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
                     files = project.fileTree('src/main/deploy')
@@ -46,6 +57,9 @@ wpi.java.debugJni = false
 
 // Set this to true to enable desktop support.
 def includeDesktopSupport = false
+
+// Uncomment for debugging support
+// def includeDesktopSupport = true
 
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
