@@ -65,7 +65,7 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double LOAD_SPEED_BELT = -0.15;
     private final static double LOAD_SPEED_SHOOTER_FEED = 0.05;
     private final static double SPEAKER_SHOOTER_DELAY = 0.5;
-    private final static double SPEAKER_SHOOT_SPEED = 0.5;
+    private final static double SPEAKER_SHOOT_SPEED = 1.0;
     private final static double SPEAKER_SHOOT_BELT_SPEED = -1;
     private final static double SPEAKER_FLYWHEEL_SHOOT_SPEED = 1.0;
     private final static double BENDER_SHOOT_SPEED = 1.0;

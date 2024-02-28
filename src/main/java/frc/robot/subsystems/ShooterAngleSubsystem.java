@@ -99,7 +99,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (true){//Robot.isDebug) {
+        if (Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Shooter Angle (Debug)");
 
             m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
@@ -216,14 +216,11 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         //     stopMotor();
         // }
 
-        System.out.println("meas: " + getMeasurement() + ", limit: " + SHOOTER_ELEVATOR_LIMIT);
         if(getMeasurement() >= SHOOTER_ELEVATOR_LIMIT){
             ShooterSubsystem.isShooterLimit = true;
-            System.out.println("ShooterLimit: " + ShooterSubsystem.isShooterLimit);
         }
         else {
             ShooterSubsystem.isShooterLimit = false;
-            System.out.println("ShooterLimit: " + ShooterSubsystem.isShooterLimit);
         }
     }
 

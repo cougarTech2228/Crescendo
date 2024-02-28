@@ -76,7 +76,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
 
-        if (true){//Robot.isDebug) {
+        if (Robot.isDebug) {
             ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
             sbTab.addString("Target position", new Supplier<String>() {
@@ -182,10 +182,8 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if(isElevatorAtBottom()){
             ShooterSubsystem.isElevatorHome = true;
-            System.out.println("Elevator Home: " + ShooterSubsystem.isElevatorHome);
         } else {
             ShooterSubsystem.isElevatorHome = false;
-            System.out.println("Elevator Home: " + ShooterSubsystem.isElevatorHome);
         }
     }
 

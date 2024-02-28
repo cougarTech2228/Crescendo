@@ -97,7 +97,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
         mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (true){//Robot.isDebug) {
+        if (Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
             m_sbTab.addDouble("Encoder", new DoubleSupplier() {
