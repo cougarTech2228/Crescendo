@@ -11,6 +11,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.ctre.phoenix.CANifier;
+import com.ctre.phoenix.CANifier.LEDChannel;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
@@ -25,6 +27,7 @@ import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 import frc.robot.subsystems.ElevatorSubsystem.Position;
 import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
 
+
 public class ShooterSubsystem extends SubsystemBase {
 
     private BenderAngleSubsystem mBenderAngleSubsystem = BenderAngleSubsystem.getInstance();
@@ -38,6 +41,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private CANSparkMax mGroundFeedMotor;
     private CANSparkMax mShooterBeltMotor;
     private TalonSRX mBenderFeedMotor;
+    public static CANifier canifier = new CANifier(25);
+
     double timeCheck;
 
     private boolean m_isLoaded = false;
@@ -125,6 +130,17 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private State currentState = mEmptyState;
 
+    private void setLEDRed() {
+        canifier.setLEDOutput(1, LEDChannel.LEDChannelA);
+    }
+    private void setLEDGreen() {
+        canifier.setLEDOutput(1, LEDChannel.LEDChannelC);
+    }
+    private void setLEDOrange() {
+        canifier.setLEDOutput(0.929, LEDChannel.LEDChannelA);
+        canifier.setLEDOutput(0.686, LEDChannel.LEDChannelC);
+    }
+
     private class EmptyState extends State {
         public EmptyState() {
             super("Empty");
@@ -133,8 +149,8 @@ public class ShooterSubsystem extends SubsystemBase {
         @Override
         public void enterState() {
             stopAllMotors();
+            setLEDRed();
         }
-
         @Override
         public void run() {
             if (isNoteAtBottom()) {
@@ -200,6 +216,8 @@ public class ShooterSubsystem extends SubsystemBase {
             mGroundFeedMotor.set(LOAD_SPEED_GROUND);
             mShooterBeltMotor.set(LOAD_SPEED_BELT);
             mShooterFeedMotor.set(LOAD_SPEED_SHOOTER_FEED);
+            setLEDOrange();
+
         }
 
         @Override
@@ -243,6 +261,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         @Override
         public void enterState() {
+            setLEDGreen();
             m_isLoaded = true;
             mElevatorSubsystem.setPosition(Position.HOME);
             stopAllMotors();
@@ -533,6 +552,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
         @Override
         public void enterState(){
+            setLEDOrange();
             mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.SOURCE);
             mBenderAngleSubsystem.setBenderPosition(BenderPosition.LOAD_SOURCE);
             mShooterAngleSubsystem.setPosition(ShooterPosition.LOAD_SOURCE);
