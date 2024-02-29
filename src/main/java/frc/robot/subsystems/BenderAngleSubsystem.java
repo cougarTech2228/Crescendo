@@ -22,7 +22,9 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         SHOOT_SPEAKER,
         SHOOT_AMP,
         LOAD_INTERNAL,
-        LOAD_SOURCE
+        LOAD_SOURCE,
+        PREP_TRAP,
+        SHOOT_TRAP
     };
 
     private ShuffleboardTab m_sbTab;
@@ -64,6 +66,10 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
     /** angle where bender is in the correct location to shoot into the amp */
     private final static double BENDER_SHOOT_AMP_LOCATION = 47.6;
+
+    private final static double BENDER_PREP_TRAP_LOCATION = 72;
+
+    private final static double BENDER_SHOOT_TRAP_lOCATION = 41;
 
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 2;
@@ -224,6 +230,12 @@ public class BenderAngleSubsystem extends PIDSubsystem {
             case SHOOT_SPEAKER:
                 angle = BENDER_SPEAKER_LOCATION;
                 break;
+            case PREP_TRAP:
+                angle = BENDER_PREP_TRAP_LOCATION;
+                break;
+            case SHOOT_TRAP:
+                angle = BENDER_SHOOT_TRAP_lOCATION;
+                break;
         }
 
         if (angle > m_benderAngle) {
@@ -286,6 +298,10 @@ public class BenderAngleSubsystem extends PIDSubsystem {
      */
     public boolean isInAmpLocation() {
         return m_currentTargetPosition == BenderPosition.SHOOT_AMP && atGoal();
+    }
+
+    public boolean isInTrapPrepLocation() {
+        return m_currentTargetPosition == BenderPosition.PREP_TRAP && atGoal();
     }
 
     public void raiseBender() {

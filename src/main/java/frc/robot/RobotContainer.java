@@ -28,6 +28,7 @@ import frc.robot.subsystems.AprilTagSubsystem;
 import frc.robot.subsystems.ButtonBoardSubsystem;
 import frc.robot.subsystems.DrivebaseSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.ShooterSubsystem.OperatorEvent;
 import frc.robot.subsystems.ClimberSubsystem;
 
 public class RobotContainer {
@@ -112,72 +113,23 @@ public class RobotContainer {
               };
             }));
 
-    // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-    // joystick.b().whileTrue(drivetrain
-    // .applyRequest(() -> point.withModuleDirection(new
-    // Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))));
-
     // reset the field-centric heading on left bumper press
     joystick.leftBumper().onTrue(drivetrain.runOnce(() -> {
       drivetrain.seedFieldRelative(new Pose2d());
     }));
-
     joystick.a().onTrue(new InstantCommand(() -> {
       shooter.forceLoaded();
     }));
     joystick.y().onTrue(new InstantCommand(() -> {
       shooter.forceEmpty();
     }));
+    joystick.start().onTrue(new InstantCommand(() -> {
+      System.out.println("Prep Trap Button Pressed");
+      ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.PREP_TRAP);
+    }));
 
-    // joystick.y().onTrue(new InstantCommand(() -> {
-    // shooter.setBender(BenderPosition.SHOOT_SPEAKER);
-    // }));
-    // joystick.x().onTrue(new InstantCommand(() -> {
-    // shooter.setBender(BenderPosition.LOAD_INTERNAL);
-    // }));
-
-    // joystick.x().onTrue(new InstantCommand(() -> shooter.loadNote()));
-    // joystick.x().onFalse(new InstantCommand(() -> shooter.stopMotors()));
-
-    // joystick.rightBumper().onTrue(new InstantCommand(() -> {
-    // var ampPose = aprilTagSubsystem.getAmpPose();
-    // var currentPose = drivetrain.getCurrentPose();
-    // System.out.println("ampPose: " + ampPose + ", currentPose: " + currentPose);
-    // List<Translation2d> bezierPoints = PathPlannerPath.bezierFromPoses(
-    // currentPose,
-    // ampPose);
-
-    // System.out.println("*****************************");
-    // for (Translation2d translation2d : bezierPoints) {
-    // System.out.println("point: " + translation2d);
-    // }
-    // System.out.println("*****************************");
-
-    // // Create the path using the bezier points created above
-    // PathPlannerPath path = new PathPlannerPath(
-    // bezierPoints,
-    // new PathConstraints(0.5, 0.5, 2 * Math.PI, 4 * Math.PI), // The constraints
-    // for this path. If using a differential drivetrain, the angular constraints
-    // have no effect.
-    // new GoalEndState(0.0, Rotation2d.fromDegrees(-90))); // Goal end state. You
-    // can set a holonomic rotation here. If using a differential drivetrain, the
-    // rotation will have no effect.
-
-    // // Prevent the path from being flipped if the coordinates are already correct
-    // path.preventFlipping = true;
-    // CommandScheduler.getInstance().schedule(drivetrain.getFollowPathCommand(path,
-    // true));
-    // }));
-    // if (Utils.isSimulation()) {
-    // drivetrain.seedFieldRelative(new Pose2d(new Translation2d(),
-    // Rotation2d.fromDegrees(90)));
-    // }
     drivetrain.registerTelemetry(logger::telemeterize);
 
-    // joystick.pov(0).whileTrue(drivetrain.applyRequest(() ->
-    // forwardStraight.withVelocityX(0.5).withVelocityY(0)));
-    // joystick.pov(180).whileTrue(drivetrain.applyRequest(() ->
-    // forwardStraight.withVelocityX(-0.5).withVelocityY(0)));
   }
 
   public RobotContainer() {
