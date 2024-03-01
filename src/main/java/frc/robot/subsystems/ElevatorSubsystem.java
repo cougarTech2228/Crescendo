@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
-import frc.robot.Robot;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -76,7 +75,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
 
-        if (Robot.isDebug) {
+        if (false) {
             ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
             sbTab.addString("Target position", new Supplier<String>() {
@@ -143,24 +142,6 @@ public class ElevatorSubsystem extends PIDSubsystem {
     public void periodic() {
         super.periodic();
 
-        if (isElevatorAtBottom()) {
-            if (mCurrentState != State.RAISING ) {
-                stopMotor();
-                mCurrentState = State.STOPPED;
-                mCurrentPosition = Position.HOME;
-            }
-            encoderZeroValue = mElevatorMotor.getRotorPosition().getValue();
-            mIsZeroed = true;
-        }
-
-        if (!mIsZeroed) {
-            System.out.println ("Elevator Auto lower");
-            System.out.println("Elevator Motor set to speed");
-            mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
-            mCurrentState = State.LOWERING;
-            return;
-        }
-
         if (DriverStation.isDisabled() != isDisabled) {
             isDisabled = DriverStation.isDisabled();
             if (isDisabled) {
@@ -173,6 +154,29 @@ public class ElevatorSubsystem extends PIDSubsystem {
         if (isDisabled) {
             disable();
             stopMotor();
+            return;
+        }
+
+        if (isElevatorAtBottom()) {
+            System.out.println("Elevator State " + mCurrentState);
+            if (mCurrentState != State.RAISING ) {
+                stopMotor();
+                mCurrentState = State.STOPPED;
+                mCurrentPosition = Position.HOME;
+            }
+            encoderZeroValue = mElevatorMotor.getRotorPosition().refresh().getValue();
+            if (mCurrentState == State.LOWERING) {
+                System.out.println("disabling - lowering while home");
+                disable();
+            }
+            mIsZeroed = true;
+        }
+
+        if (!mIsZeroed) {
+            disable();
+            System.out.println ("Elevator Auto lower");
+            mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
+            mCurrentState = State.LOWERING;
             return;
         }
 
@@ -221,7 +225,6 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // Moves the elevator
         System.out.println("called raise elevator");
         if (!isElevatorAtTop() && !ShooterSubsystem.isShooterLimit) {
-            System.out.println("Elevator Motor set to speed");
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
             mCurrentState = State.RAISING;
@@ -235,7 +238,6 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // Moves the elevator down
         System.out.println("called lower elevator");
         if (!isElevatorAtBottom()) {
-            System.out.println("Elevator Motor set to speed");
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
             mCurrentState = State.LOWERING;
             System.out.println("lowering");
@@ -260,6 +262,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     public void setPosition(Position position) {
         double target = 0;
+        System.out.println("Elevator Set Position " + position);
 
         mCurrentPosition = position;
         if (position == Position.HOME) {
@@ -276,7 +279,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if (target > getMeasurement()) {
             mCurrentState = State.RAISING;
-        } else if (target > getMeasurement()) {
+        } else if (target < getMeasurement()) {
             mCurrentState = State.LOWERING;
         } else {
             mCurrentState = State.STOPPED;
@@ -295,8 +298,12 @@ public class ElevatorSubsystem extends PIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, output);
         }
-        System.out.println("Elevator Motor set to speed");
-        System.out.println("Elevator Use Output: " + val);
-        mElevatorMotor.set(val);
+        if (val > 0 && isElevatorAtBottom()) {
+            // don't go past bottom
+            mElevatorMotor.set(0);
+        } else {
+           // System.out.println("Elevator Use Output: " + val);
+            mElevatorMotor.set(val);
+        }
     }
 }

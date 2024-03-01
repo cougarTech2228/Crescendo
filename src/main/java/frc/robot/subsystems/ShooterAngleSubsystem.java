@@ -100,7 +100,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (Robot.isDebug) {
+        if (true){//Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Shooter Angle (Debug)");
 
             m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
@@ -156,6 +156,13 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
                 @Override
                 public boolean getAsBoolean() {
                     return isShooterAtTop();
+                };
+            });
+
+            m_sbTab.addBoolean("Shooter at goal", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return atGoal();
                 };
             });
         }

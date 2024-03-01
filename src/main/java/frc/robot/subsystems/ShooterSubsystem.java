@@ -525,6 +525,18 @@ public class ShooterSubsystem extends SubsystemBase {
         }
 
         @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case FIRE:
+                    changeState(mFireAmpState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in ReadyForFireAmpState");
+                    break;
+            }
+        }
+
+        @Override
         public void run() {
             if ((Timer.getFPGATimestamp() - feedTimerStart) > AMP_PRELOAD_DELAY) {
                 mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
@@ -627,10 +639,17 @@ public class ShooterSubsystem extends SubsystemBase {
             mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
         }
 
+
         @Override
-        public void run() {
-            if ((Timer.getFPGATimestamp() - shootTimerStart) > AMP_SHOOTER_DELAY) {
-                changeState(mEmptyState);
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case FIRE:
+                    mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                    changeState(mEmptyState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in FireAmpState");
+                    break;
             }
         }
     }
