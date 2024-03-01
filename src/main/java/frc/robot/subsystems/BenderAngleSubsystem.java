@@ -69,7 +69,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
     private final static double BENDER_PREP_TRAP_LOCATION = 72;
 
-    private final static double BENDER_SHOOT_TRAP_lOCATION = 41;
+    private final static double BENDER_SHOOT_TRAP_lOCATION = 43;
 
     /** distance away from expected location that we still concider good */
     private final static double BENDER_ANGLE_THRESHOLD = 2;

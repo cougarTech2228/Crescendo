@@ -144,12 +144,19 @@ public class ElevatorSubsystem extends PIDSubsystem {
         super.periodic();
 
         if (isElevatorAtBottom()) {
+            if (mCurrentState != State.RAISING ) {
+                stopMotor();
+                mCurrentState = State.STOPPED;
+                mCurrentPosition = Position.HOME;
+            }
             encoderZeroValue = mElevatorMotor.getRotorPosition().getValue();
             mIsZeroed = true;
         }
 
         if (!mIsZeroed) {
-            mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
+            System.out.println ("Elevator Auto lower");
+            System.out.println("Elevator Motor set to speed");
+            mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
             mCurrentState = State.LOWERING;
             return;
         }
@@ -214,6 +221,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // Moves the elevator
         System.out.println("called raise elevator");
         if (!isElevatorAtTop() && !ShooterSubsystem.isShooterLimit) {
+            System.out.println("Elevator Motor set to speed");
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
             mCurrentState = State.RAISING;
@@ -226,8 +234,8 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // setPosition(Position.HOME);
         // Moves the elevator down
         System.out.println("called lower elevator");
-        disable();
         if (!isElevatorAtBottom()) {
+            System.out.println("Elevator Motor set to speed");
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
             mCurrentState = State.LOWERING;
             System.out.println("lowering");
@@ -287,6 +295,8 @@ public class ElevatorSubsystem extends PIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, output);
         }
+        System.out.println("Elevator Motor set to speed");
+        System.out.println("Elevator Use Output: " + val);
         mElevatorMotor.set(val);
     }
 }

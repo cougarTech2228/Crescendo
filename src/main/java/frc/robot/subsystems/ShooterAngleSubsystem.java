@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -57,7 +58,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private static final double kD = 0.01;
     private static final double kDt = 0.01;
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
-    private static final double SHOOTER_ANGLE_THRESHOLD = 1;
+    private static final double SHOOTER_ANGLE_THRESHOLD = 3;
     private static final double kIZone = 2;
 
     public enum ShooterPosition {
@@ -150,6 +151,13 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
                     return mAutoAngle;
                 };
             });
+
+            m_sbTab.addBoolean("Shooter Top Sensor", new BooleanSupplier() {
+                @Override
+                public boolean getAsBoolean() {
+                    return isShooterAtTop();
+                };
+            });
         }
 
         new Thread("shooterAngleEncoder") {
@@ -164,6 +172,10 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
                 }
             };
         }.start();
+    }
+
+    private boolean isShooterAtTop(){
+        return getMeasurement() < 374;
     }
 
     private boolean isDisabled = DriverStation.isDisabled();
@@ -210,7 +222,19 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         else {
             ShooterSubsystem.isShooterLimit = false;
         }
+
+        if(mCurrentState == State.RAISING && isShooterAtTop()){
+            System.out.println("AT top and raising, stopping");
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, 0);
+            mCurrentState = State.STOPPED;
+        }
+
+        if (mCurrentState == State.RAISING && getMeasurement() < 380) {
+            System.out.println("slow raising");
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP / 2);
+        }
     }
+
 
     private boolean atGoal() {
         return pidController.atSetpoint();
@@ -227,8 +251,21 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         // Moves the shooter
         System.out.println("called raise shooter");
         disable();
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP);
-        System.out.println("raising");
+        if(!isShooterAtTop()){
+            if (getMeasurement() < 390) {
+                System.out.println ("Slow up");
+                mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP / 2);
+            } else {
+                mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_UP);
+            }
+            System.out.println("raising " + getMeasurement());
+            mCurrentState = State.RAISING;
+        }
+        else{
+            System.out.println("At TOP, stopping!");
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, 0);
+            mCurrentState = State.STOPPED;
+        }
     }
 
     public void lowerShooter() {
@@ -238,6 +275,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
             disable();
             mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, SPEED_DOWN);
             System.out.println("lowering");
+            mCurrentState = State.LOWERING;
         }
     }
 
@@ -326,6 +364,10 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, output);
         }
-        mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, val);
+        if (isShooterAtTop() && val < 0) {
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, 0);
+        } else {
+            mLinearActuatorMotor.set(TalonSRXControlMode.PercentOutput, val);
+        }
     }
 }

@@ -11,9 +11,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.ctre.phoenix.CANifier;
-import com.ctre.phoenix.CANifier.LEDChannel;
 
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -40,8 +40,8 @@ public class ShooterSubsystem extends SubsystemBase {
     private CANSparkMax mGroundFeedMotor;
     private CANSparkMax mShooterBeltMotor;
     private TalonSRX mBenderFeedMotor;
-    public static CANifier canifier = new CANifier(25);
-
+    private AddressableLED mLed = new AddressableLED(1);
+    private AddressableLEDBuffer mLedBuffer = new AddressableLEDBuffer(147);
     double timeCheck;
 
     private boolean m_isLoaded = false;
@@ -62,6 +62,10 @@ public class ShooterSubsystem extends SubsystemBase {
 
     private final static double LOAD_SPEED_GROUND = 1;
     private final static double SPIT_SPEED_GROUND = -1;
+    private final static double SPIT_SPEED_SHOOTER_FEED = -0.5;
+    private final static double SPIT_SPEED_SHOOTER_BELT = 0.5;
+    private final static double SPIT_SPEED_SHOOTER_FLYWHEEL = -0.5;
+    private final static double SPIT_SPEED_BENDER = 0.5;
     private final static double LOAD_SPEED_BELT = -0.15;
     private final static double LOAD_SPEED_SHOOTER_FEED = 0.05;
     private final static double SPEAKER_SHOOTER_DELAY = 0.5;
@@ -138,21 +142,24 @@ public class ShooterSubsystem extends SubsystemBase {
     private State currentState = mEmptyState;
 
     private void setLEDRed() {
-        canifier.setLEDOutput(1, LEDChannel.LEDChannelA);
-        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
-        canifier.setLEDOutput(0, LEDChannel.LEDChannelC);
+        for (int i=0; i< mLedBuffer.getLength(); i++){
+            mLedBuffer.setRGB(i, 255, 0, 0);
+        }
+        mLed.setData(mLedBuffer);
     }
 
     private void setLEDGreen() {
-        canifier.setLEDOutput(0, LEDChannel.LEDChannelA);
-        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
-        canifier.setLEDOutput(1, LEDChannel.LEDChannelC);
+        for (int i=0; i< mLedBuffer.getLength(); i++){
+            mLedBuffer.setRGB(i, 0, 255, 0);
+        }
+        mLed.setData(mLedBuffer);
     }
 
     private void setLEDOrange() {
-        canifier.setLEDOutput(0.929, LEDChannel.LEDChannelA);
-        canifier.setLEDOutput(0, LEDChannel.LEDChannelB);
-        canifier.setLEDOutput(0.686, LEDChannel.LEDChannelC);
+        for (int i=0; i< mLedBuffer.getLength(); i++){
+            mLedBuffer.setRGB(i, 166, 160, 50);
+        }
+        mLed.setData(mLedBuffer);
     }
 
     private class EmptyState extends State {
@@ -164,6 +171,7 @@ public class ShooterSubsystem extends SubsystemBase {
         public void enterState() {
             stopAllMotors();
             setLEDRed();
+            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
         }
 
         @Override
@@ -202,6 +210,10 @@ public class ShooterSubsystem extends SubsystemBase {
         public void enterState() {
             stopAllMotors();
             mGroundFeedMotor.set(SPIT_SPEED_GROUND);
+            mShooterFeedMotor.set(SPIT_SPEED_SHOOTER_FEED);
+            mShooterBeltMotor.set(SPIT_SPEED_SHOOTER_BELT);
+            mShooterFlywheelMotor.set(SPIT_SPEED_SHOOTER_FLYWHEEL);
+            mBenderFeedMotor.set(TalonSRXControlMode.PercentOutput, SPIT_SPEED_BENDER);
         }
 
         @Override
@@ -624,30 +636,32 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private class FireTrapState extends State {
-        private double shootTimerStart;
-
         private FireTrapState() {
             super("Fire Trap");
         }
 
         @Override
         public void enterState() {
-            shootTimerStart = Timer.getFPGATimestamp();
             mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case FIRE:
+                    mBenderFeedMotor.set(ControlMode.PercentOutput, 0);
+                    changeState(mEmptyState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in FireTrapState");
+                    break;
+            }
         }
 
         @Override
         public void exitState() {
             m_isLoaded = false;
-            mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
             mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
-        }
-
-        @Override
-        public void run() {
-            if ((Timer.getFPGATimestamp() - shootTimerStart) > AMP_SHOOTER_DELAY) {
-                changeState(mEmptyState);
-            }
         }
     }
 
@@ -724,6 +738,9 @@ public class ShooterSubsystem extends SubsystemBase {
         mShooterFlywheelMotor.setNeutralMode(NeutralModeValue.Brake);
         mShooterFeedMotor.setNeutralMode(NeutralModeValue.Brake);
 
+        mLed.setLength(mLedBuffer.getLength());
+        mLed.setData(mLedBuffer);
+        mLed.start();
         ShuffleboardTab driverTab = Shuffleboard.getTab("Driver");
         driverTab.addString("Shooter state", new Supplier<String>() {
             @Override
@@ -965,10 +982,11 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     public void forceLoaded() {
-        currentState = mLoadedState;
+        changeState(mLoadedState);
+
     }
 
     public void forceEmpty() {
-        currentState = mEmptyState;
+        changeState(mEmptyState);
     }
 }
