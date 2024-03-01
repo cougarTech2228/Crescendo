@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
+import frc.robot.Robot;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -75,7 +76,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
         mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
 
-        if (false) {
+        if (Robot.isDebug) {
             ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
 
             sbTab.addString("Target position", new Supplier<String>() {
@@ -158,10 +159,10 @@ public class ElevatorSubsystem extends PIDSubsystem {
         }
 
         if (isElevatorAtBottom()) {
-            System.out.println("Elevator State " + mCurrentState);
+            // System.out.println("Elevator State " + mCurrentState);
             if (mCurrentState != State.RAISING ) {
                 stopMotor();
-                mCurrentState = State.STOPPED;
+                setState(State.STOPPED);
                 mCurrentPosition = Position.HOME;
             }
             encoderZeroValue = mElevatorMotor.getRotorPosition().refresh().getValue();
@@ -176,7 +177,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
             disable();
             System.out.println ("Elevator Auto lower");
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
-            mCurrentState = State.LOWERING;
+            setState(State.LOWERING);
             return;
         }
 
@@ -184,10 +185,10 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if (mCurrentState == State.RAISING && isElevatorAtTop()) {
             stopMotor();
-            mCurrentState = State.STOPPED;
+            setState(State.STOPPED);
         } else if (mCurrentState == State.LOWERING && isElevatorAtBottom()) {
             stopMotor();
-            mCurrentState = State.STOPPED;
+            setState(State.STOPPED);
             mCurrentPosition = Position.HOME;
         }
 
@@ -215,7 +216,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
     public void stopMotor() {
         // Stops elevator motor
         mElevatorMotor.set(0);
-        mCurrentState = State.STOPPED;
+        setState(State.STOPPED);
         // System.out.println("stopped");
     }
 
@@ -227,7 +228,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         if (!isElevatorAtTop() && !ShooterSubsystem.isShooterLimit) {
             mElevatorMotor.set(ELEVATOR_SPEED_UP);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
-            mCurrentState = State.RAISING;
+            setState(State.RAISING);
             System.out.println("raising");
         }
     }
@@ -239,7 +240,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         System.out.println("called lower elevator");
         if (!isElevatorAtBottom()) {
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
-            mCurrentState = State.LOWERING;
+            setState(State.LOWERING);
             System.out.println("lowering");
         }
     }
@@ -277,16 +278,26 @@ public class ElevatorSubsystem extends PIDSubsystem {
             System.out.println("Setting elevator height: " + target);
         }
 
-        if (target > getMeasurement()) {
-            mCurrentState = State.RAISING;
-        } else if (target < getMeasurement()) {
-            mCurrentState = State.LOWERING;
+        if (target < getMeasurement()) {
+            System.out.println("CHANGE RAISING target: " + target + " , current: " + getMeasurement());
+
+            setState(State.RAISING);
+        } else if (target > getMeasurement()) {
+            System.out.println("CHANGE LOWERING target: " + target + " , current: " + getMeasurement());
+            setState(State.LOWERING);
         } else {
-            mCurrentState = State.STOPPED;
+            setState(State.STOPPED);
         }
 
         pidController.setSetpoint(target);
         enable();
+    }
+
+    private void setState(State newState) {
+        if (mCurrentState != newState) {
+            System.out.println("Elevator State: " + mCurrentState + " --> " + newState);
+            mCurrentState = newState;
+        }
     }
 
     @Override

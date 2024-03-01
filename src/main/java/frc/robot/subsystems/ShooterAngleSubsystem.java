@@ -58,7 +58,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private static final double kD = 0.01;
     private static final double kDt = 0.01;
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
-    private static final double SHOOTER_ANGLE_THRESHOLD = 3;
+    private static final double SHOOTER_ANGLE_THRESHOLD = 2;
     private static final double kIZone = 2;
 
     public enum ShooterPosition {
@@ -100,7 +100,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
-        if (true){//Robot.isDebug) {
+        if (Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Shooter Angle (Debug)");
 
             m_sbTab.addDouble("Current Angle:", new DoubleSupplier() {
