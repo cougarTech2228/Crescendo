@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.shooterAngle;
 
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -19,6 +19,9 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 import frc.robot.Robot;
+import frc.robot.subsystems.apriltags.AprilTagSubsystem;
+import frc.robot.subsystems.drivebase.DrivebaseSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 public class ShooterAngleSubsystem extends PIDSubsystem {
 

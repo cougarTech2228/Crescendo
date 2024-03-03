@@ -9,6 +9,8 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
 import com.ctre.phoenix6.mechanisms.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -24,12 +26,11 @@ import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.ShootSpeakerCommand;
-import frc.robot.subsystems.AprilTagSubsystem;
-import frc.robot.subsystems.ButtonBoardSubsystem;
-import frc.robot.subsystems.DrivebaseSubsystem;
-import frc.robot.subsystems.ShooterSubsystem;
-import frc.robot.subsystems.ShooterSubsystem.OperatorEvent;
-import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.apriltags.AprilTagSubsystem;
+import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.drivebase.DrivebaseSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem.OperatorEvent;
 
 public class RobotContainer {
   private double MaxSpeed = 4.4; // 6 meters per second desired top speed
@@ -39,7 +40,7 @@ public class RobotContainer {
   private final double driverCameraTiltChange = 0.01;
 
 
-  private final SendableChooser<String> m_auto_chooser = new SendableChooser<>();
+  private final LoggedDashboardChooser<String> m_auto_chooser = new LoggedDashboardChooser<>("SelectedAuto");
   private static final String kAutoNone = "None";
   private static final String kAutoLeave = "DriveForward_2m";
   private static final String kAutoShoot_F = "Shoot_F";
@@ -58,7 +59,7 @@ public class RobotContainer {
   public final ShooterSubsystem shooter = ShooterSubsystem.getInstance();
   public final AprilTagSubsystem aprilTagSubsystem = AprilTagSubsystem.getInstance();
   public final ClimberSubsystem climberSubsystem = ClimberSubsystem.getInstance();
-  public final ButtonBoardSubsystem buttonBoardSubsystem = ButtonBoardSubsystem.getInstance();
+  public final ButtonBoard buttonBoardSubsystem = ButtonBoard.getInstance();
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
       .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
@@ -141,7 +142,7 @@ public class RobotContainer {
 
     ShuffleboardTab driverTab = Shuffleboard.getTab("Driver");
 
-    m_auto_chooser.setDefaultOption("None", kAutoNone);
+    m_auto_chooser.addDefaultOption("None", kAutoNone);
     m_auto_chooser.addOption("Leave", kAutoLeave);
     m_auto_chooser.addOption("Shoot_F", kAutoShoot_F);
     m_auto_chooser.addOption("Shoot_S", kAutoShoot_S);
@@ -151,7 +152,7 @@ public class RobotContainer {
     m_auto_chooser.addOption("Pos2_2_5", kAutoPos2_2_5);
     m_auto_chooser.addOption("Pos2_2_3_1", kAutoPos2_2_3_1);
     m_auto_chooser.addOption("Pos3_8", kAutoPos3_8);
-    driverTab.add("Auto Chooser", m_auto_chooser)
+    driverTab.add("Auto Chooser", m_auto_chooser.getSendableChooser())
       .withPosition(6, 0)
       .withSize(2,1);
 
@@ -170,8 +171,8 @@ public class RobotContainer {
   private String lastAutoChoice;
   private Command autoCommand = null;
   public void disabledPeriodic(){
-    if(m_auto_chooser.getSelected() != lastAutoChoice){
-      lastAutoChoice = m_auto_chooser.getSelected();
+    if(m_auto_chooser.get() != lastAutoChoice){
+      lastAutoChoice = m_auto_chooser.get();
       System.out.println("Building Auto: " + lastAutoChoice);
       autoCommand = AutoBuilder.buildAuto(lastAutoChoice);
     }

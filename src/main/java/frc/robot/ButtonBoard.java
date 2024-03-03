@@ -1,13 +1,14 @@
-package frc.robot.subsystems;
+package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
-import frc.robot.subsystems.ShooterSubsystem.OperatorEvent;
+import frc.robot.subsystems.climber.ClimberSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.shooter.ShooterSubsystem.OperatorEvent;
+import frc.robot.subsystems.shooterAngle.ShooterAngleSubsystem.ShooterPosition;
 
-public class ButtonBoardSubsystem extends SubsystemBase {
+public class ButtonBoard  {
     public static final double FINE_STRAFE_DISTANCE_CM = 3.0;
 
     private enum ButtonBoardOperationMode {
@@ -23,16 +24,16 @@ public class ButtonBoardSubsystem extends SubsystemBase {
 
     private ButtonBoardOperationMode m_operationMode;
 
-    private static ButtonBoardSubsystem mInstance = null;
+    private static ButtonBoard mInstance = null;
 
-    public static ButtonBoardSubsystem getInstance() {
+    public static ButtonBoard getInstance() {
         if (mInstance == null) {
-            mInstance = new ButtonBoardSubsystem();
+            mInstance = new ButtonBoard();
         }
         return mInstance;
     }
 
-    private ButtonBoardSubsystem() {
+    private ButtonBoard() {
         m_joystick1 = new Joystick(kJoystickChannel1);
         m_joystick2 = new Joystick(kJoystickChannel2);
     }
@@ -116,10 +117,6 @@ public class ButtonBoardSubsystem extends SubsystemBase {
             m_operationMode = ButtonBoardOperationMode.Camera;
         }
         System.out.println(m_operationMode);
-    }
-
-    @Override
-    public void periodic() {
     }
 
     public double getJoystickX() {

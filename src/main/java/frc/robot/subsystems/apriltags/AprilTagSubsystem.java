@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.apriltags;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -16,12 +16,13 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.drivebase.DrivebaseSubsystem;
 
 public class AprilTagSubsystem extends SubsystemBase {
     private PhotonCamera camera;
     private PhotonPipelineResult result;
     DrivebaseSubsystem drivebaseSubsystem;
-    AprilTagFieldLayout aprilTagFieldLayout;
+    public AprilTagFieldLayout aprilTagFieldLayout;
 
     Transform2d cameraOffsetTransform = new Transform2d(-0.64, -0.1, Rotation2d.fromDegrees(180));
 

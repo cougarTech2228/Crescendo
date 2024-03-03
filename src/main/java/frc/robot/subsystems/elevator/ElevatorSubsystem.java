@@ -1,19 +1,16 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.elevator;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 import frc.robot.Robot;
+import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -28,15 +25,17 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     private static final double kMotorVoltageLimit = 0.7;
 
+    private final ElevatorIO mIO;
+    private final ElevatorIOInputsAutoLogged inputs = new ElevatorIOInputsAutoLogged();
+
+    @AutoLogOutput
     private double encoderZeroValue = 0;
 
-    private TalonFX mElevatorMotor;
-    private DigitalInput mElevatorTopSensor;
-    private DigitalInput mElevatorBottomSensor;
-    private static final double ELEVATOR_SPEED_UP = -0.4;
-    private static final double ELEVATOR_SPEED_DOWN = 0.4;
+    private static final double ELEVATOR_UP_VOLTAGE = -5;
+    private static final double ELEVATOR_DOWN_VOLTAGE = 5;
+    private static final double ELEVATOR_HOME_VOLTAGE = 2;
 
-    private double mCurrentMeasurement = 0;
+    @AutoLogOutput
     private boolean mIsZeroed = false;
 
     enum State {
@@ -45,14 +44,16 @@ public class ElevatorSubsystem extends PIDSubsystem {
         LOWERING,
     }
 
+    @AutoLogOutput
     private State mCurrentState = State.STOPPED;
 
-    enum Position {
+    public enum Position {
         HOME,
         AMP,
         SOURCE
     }
 
+    @AutoLogOutput
     private Position mCurrentPosition = Position.HOME;
 
     private static final PIDController pidController = new PIDController(kP, kI, kD, kDt);
@@ -61,94 +62,119 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     public static ElevatorSubsystem getInstance() {
         if (mInstance == null) {
-            mInstance = new ElevatorSubsystem();
+            switch (Constants.currentMode) {
+                case REAL:
+                    mInstance = new ElevatorSubsystem(new ElevatorIOHW());
+                    break;
+                case SIM:
+                    mInstance = new ElevatorSubsystem(new ElevatorIOSim());
+                    break;
+                default:
+                    mInstance = new ElevatorSubsystem(new ElevatorIO(){});
+                    break;
+            }
         }
         return mInstance;
     }
 
-    private ElevatorSubsystem() {
+    private ElevatorSubsystem(ElevatorIO io) {
         super(pidController, 0);
+        mIO = io;
 
         pidController.setTolerance(ELEVATOR_THRESHOLD);
 
-        mElevatorMotor = new TalonFX(Constants.kElevatorMotorId);
-        mElevatorMotor.setNeutralMode(NeutralModeValue.Brake);
-        mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
-        mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
+        mIO.setNeutralMode(NeutralModeValue.Brake);
 
-        if (Robot.isDebug) {
-            ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
-
-            sbTab.addString("Target position", new Supplier<String>() {
-                @Override
-                public String get() {
-                    return mCurrentPosition.toString();
-                }
-            });
-
-            sbTab.addDouble("PID goal", new DoubleSupplier() {
-                @Override
-                public double getAsDouble() {
-                    return m_controller.getSetpoint();
-                };
-            });
-
-            sbTab.addDouble("PID output", new DoubleSupplier() {
-                @Override
-                public double getAsDouble() {
-                    return mElevatorMotor.getMotorVoltage().getValue();
-                };
-            });
-
-            sbTab.addDouble("Current Angle:", new DoubleSupplier() {
-                @Override
-                public double getAsDouble() {
-                    return mCurrentMeasurement;
-                };
-            });
-
-            sbTab.addBoolean("ElevatorTopSensor", new BooleanSupplier() {
-                @Override
-                public boolean getAsBoolean() {
-                    return isElevatorAtTop();
-                };
-            });
-
-            sbTab.addBoolean("ElevatorBottomSensor", new BooleanSupplier() {
-                @Override
-                public boolean getAsBoolean() {
-                    return isElevatorAtBottom();
-                };
-            });
-
-            sbTab.addString("Elevator state", new Supplier<String>() {
-                @Override
-                public String get() {
-                    return mCurrentState.name();
-                }
-            });
-
-            sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
-                @Override
-                public boolean getAsBoolean() {
-                    return isEnabled();
-                };
-            });
-        }
+        /*
+         * if (Robot.isDebug) {
+         * ShuffleboardTab sbTab = Shuffleboard.getTab("Elevator (Debug)");
+         * 
+         * sbTab.addString("Target position", new Supplier<String>() {
+         * 
+         * @Override
+         * public String get() {
+         * return mCurrentPosition.toString();
+         * }
+         * });
+         * 
+         * sbTab.addDouble("PID goal", new DoubleSupplier() {
+         * 
+         * @Override
+         * public double getAsDouble() {
+         * return m_controller.getSetpoint();
+         * };
+         * });
+         * 
+         * sbTab.addDouble("PID output", new DoubleSupplier() {
+         * 
+         * @Override
+         * public double getAsDouble() {
+         * return mElevatorMotor.getMotorVoltage().getValue();
+         * };
+         * });
+         * 
+         * sbTab.addDouble("Current Position:", new DoubleSupplier() {
+         * 
+         * @Override
+         * public double getAsDouble() {
+         * return inputs.elevatorPosition;
+         * };
+         * });
+         * 
+         * sbTab.addBoolean("ElevatorTopSensor", new BooleanSupplier() {
+         * 
+         * @Override
+         * public boolean getAsBoolean() {
+         * return mIO.isElevatorAtTop();
+         * };
+         * });
+         * 
+         * sbTab.addBoolean("ElevatorBottomSensor", new BooleanSupplier() {
+         * 
+         * @Override
+         * public boolean getAsBoolean() {
+         * return mIO.isElevatorAtBottom();
+         * };
+         * });
+         * 
+         * sbTab.addString("Elevator state", new Supplier<String>() {
+         * 
+         * @Override
+         * public String get() {
+         * return mCurrentState.name();
+         * }
+         * });
+         * 
+         * sbTab.addBoolean("PID Enabled", new BooleanSupplier() {
+         * 
+         * @Override
+         * public boolean getAsBoolean() {
+         * return isEnabled();
+         * };
+         * });
+         * }
+         */
     }
 
     private boolean isDisabled = DriverStation.isDisabled();
 
     @Override
     public void periodic() {
+        mIO.updateInputs(inputs);
+        Logger.processInputs("ElevatorSubsystem", inputs);
         super.periodic();
+
+        Logger.recordOutput("ElevatorSubsystem/PID/setpoint", pidController.getSetpoint());
+        Logger.recordOutput("ElevatorSubsystem/PID/positionError", pidController.getPositionError());
+        Logger.recordOutput("ElevatorSubsystem/PID/atSetpoint", pidController.atSetpoint());
+
 
         if (DriverStation.isDisabled() != isDisabled) {
             isDisabled = DriverStation.isDisabled();
             if (isDisabled) {
-                mElevatorMotor.setNeutralMode(NeutralModeValue.Coast);
+                mIO.setNeutralMode(NeutralModeValue.Coast);
             } else {
-                mElevatorMotor.setNeutralMode(NeutralModeValue.Brake);
+                mIO.setNeutralMode(NeutralModeValue.Brake);
             }
         }
 
@@ -160,28 +186,28 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if (isElevatorAtBottom()) {
             // System.out.println("Elevator State " + mCurrentState);
-            if (mCurrentState != State.RAISING ) {
+            if (mCurrentState != State.RAISING) {
                 stopMotor();
                 setState(State.STOPPED);
                 mCurrentPosition = Position.HOME;
             }
-            encoderZeroValue = mElevatorMotor.getRotorPosition().refresh().getValue();
             if (mCurrentState == State.LOWERING) {
                 System.out.println("disabling - lowering while home");
                 disable();
             }
-            mIsZeroed = true;
+            if (!mIsZeroed) {
+                mIsZeroed = true;
+                encoderZeroValue = inputs.elevatorPosition;
+            }
         }
 
         if (!mIsZeroed) {
             disable();
-            System.out.println ("Elevator Auto lower");
-            mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
+            System.out.println("Elevator Auto lower");
+            mIO.setElevatorVoltage(ELEVATOR_HOME_VOLTAGE);
             setState(State.LOWERING);
             return;
         }
-
-        mCurrentMeasurement = mElevatorMotor.getRotorPosition().refresh().getValue();
 
         if (mCurrentState == State.RAISING && isElevatorAtTop()) {
             stopMotor();
@@ -192,30 +218,16 @@ public class ElevatorSubsystem extends PIDSubsystem {
             mCurrentPosition = Position.HOME;
         }
 
-        if(isElevatorAtBottom()){
+        if (isElevatorAtBottom()) {
             ShooterSubsystem.isElevatorHome = true;
         } else {
             ShooterSubsystem.isElevatorHome = false;
         }
     }
 
-    public boolean isElevatorAtBottom() {
-        // Returns a boolean, opposite of elevator sensor.get
-        // because it's inverted, false from sensor = there's something there
-        // So we return the opposite, true means elevator at bottom
-        return !mElevatorBottomSensor.get();
-    }
-
-    public boolean isElevatorAtTop() {
-        // Returns a boolean, opposite of elevator sensor.get
-        // because it's inverted, false from sensor = there's something there
-        // So we return the opposite, true means elevator at top
-        return !mElevatorTopSensor.get();
-    }
-
     public void stopMotor() {
         // Stops elevator motor
-        mElevatorMotor.set(0);
+        mIO.setElevatorVoltage(0);
         setState(State.STOPPED);
         // System.out.println("stopped");
     }
@@ -226,7 +238,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // Moves the elevator
         System.out.println("called raise elevator");
         if (!isElevatorAtTop() && !ShooterSubsystem.isShooterLimit) {
-            mElevatorMotor.set(ELEVATOR_SPEED_UP);
+            mIO.setElevatorVoltage(ELEVATOR_UP_VOLTAGE);
             // mElevatorMotor.set(TalonSRXControlMode.Velocity, 100);
             setState(State.RAISING);
             System.out.println("raising");
@@ -239,7 +251,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         // Moves the elevator down
         System.out.println("called lower elevator");
         if (!isElevatorAtBottom()) {
-            mElevatorMotor.set(ELEVATOR_SPEED_DOWN);
+            mIO.setElevatorVoltage(ELEVATOR_DOWN_VOLTAGE);
             setState(State.LOWERING);
             System.out.println("lowering");
         }
@@ -258,7 +270,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
     }
 
     protected double getMeasurement() {
-        return mCurrentMeasurement;
+        return inputs.elevatorPosition;
     }
 
     public void setPosition(Position position) {
@@ -272,9 +284,9 @@ public class ElevatorSubsystem extends PIDSubsystem {
             target = ELEVATOR_HEIGHT_AMP;
             target = encoderZeroValue - target;
             System.out.println("setting elevator height: " + target);
-        } else if(position == Position.SOURCE){
+        } else if (position == Position.SOURCE) {
             target = ELEVATOR_HEIGHT_SOURCE;
-            target= encoderZeroValue - target;
+            target = encoderZeroValue - target;
             System.out.println("Setting elevator height: " + target);
         }
 
@@ -302,6 +314,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
     @Override
     protected void useOutput(double output, double setpoint) {
+        Logger.recordOutput("ElevatorSubsystem/PID/output", output);
         // clamp the output to a sane range
         double val;
         if (output < 0) {
@@ -311,10 +324,24 @@ public class ElevatorSubsystem extends PIDSubsystem {
         }
         if (val > 0 && isElevatorAtBottom()) {
             // don't go past bottom
-            mElevatorMotor.set(0);
+            mIO.setElevatorVoltage(0);
         } else {
-           // System.out.println("Elevator Use Output: " + val);
-            mElevatorMotor.set(val);
+            // System.out.println("Elevator Use Output: " + val);
+            mIO.setElevatorVoltage(12 * val);
         }
+    }
+
+    public boolean isElevatorAtBottom() {
+        // Returns a boolean, opposite of elevator sensor.get
+        // because it's inverted, false from sensor = there's something there
+        // So we return the opposite, true means elevator at bottom
+        return !inputs.limitSwitchBottom;
+    }
+
+    public boolean isElevatorAtTop() {
+        // Returns a boolean, opposite of elevator sensor.get
+        // because it's inverted, false from sensor = there's something there
+        // So we return the opposite, true means elevator at top
+        return !inputs.limitSwitchTop;
     }
 }

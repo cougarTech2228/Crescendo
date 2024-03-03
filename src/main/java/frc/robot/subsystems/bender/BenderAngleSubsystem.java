@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.bender;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;

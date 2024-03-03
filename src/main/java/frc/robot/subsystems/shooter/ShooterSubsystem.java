@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.shooter;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -23,9 +23,12 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Robot;
-import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
-import frc.robot.subsystems.ElevatorSubsystem.Position;
-import frc.robot.subsystems.ShooterAngleSubsystem.ShooterPosition;
+import frc.robot.subsystems.bender.BenderAngleSubsystem;
+import frc.robot.subsystems.bender.BenderAngleSubsystem.BenderPosition;
+import frc.robot.subsystems.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.elevator.ElevatorSubsystem.Position;
+import frc.robot.subsystems.shooterAngle.ShooterAngleSubsystem;
+import frc.robot.subsystems.shooterAngle.ShooterAngleSubsystem.ShooterPosition;
 
 public class ShooterSubsystem extends SubsystemBase {
 

@@ -1,21 +1,31 @@
 {
   "HALProvider": {
+    "Addressable LEDs": {
+      "0": {
+        "columns": 24
+      },
+      "window": {
+        "visible": true
+      }
+    },
     "DIO": {
       "window": {
         "visible": true
       }
     },
     "Other Devices": {
-      "Pigeon 2 (v6)[61]": {
-        "header": {
-          "open": true
-        }
-      },
       "Talon FX (v6)[11]": {
         "header": {
           "open": true
         },
         "name": "Elevator Motor"
+      }
+    },
+    "PowerDistributions": {
+      "0": {
+        "PowerDistribution[0]": {
+          "open": true
+        }
       }
     }
   },
@@ -24,7 +34,8 @@
       "/FMSInfo": "FMSInfo",
       "/Pose": "Field2d",
       "/Shuffleboard/Driver/Auto Chooser": "String Chooser",
-      "/SmartDashboard/Auto Choices": "String Chooser"
+      "/SmartDashboard/Auto Choices": "String Chooser",
+      "/SmartDashboard/SelectedAuto": "String Chooser"
     },
     "windows": {
       "/Pose": {
@@ -40,8 +51,8 @@
       }
     }
   },
-  "NetworkTables Info": {
-    "visible": true
+  "NetworkTables View": {
+    "visible": false
   },
   "sourceNames": {
     "DIO[3]": "Elevator Bottom"
