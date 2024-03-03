@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
 
 public class ElevatorIOHW implements ElevatorIO {
-    private final TalonFX mElevatorMotor = new TalonFX(Constants.kElevatorMotorId);
+    private final TalonFX mElevatorMotor = new TalonFX(Constants.kElevatorMotorId, Constants.kElevatorMotorBus);
     private final DigitalInput mElevatorTopSensor = new DigitalInput(Constants.kElevatorTopSensorId);
     private final DigitalInput mElevatorBottomSensor = new DigitalInput(Constants.kElevatorBottomSensorId);
 

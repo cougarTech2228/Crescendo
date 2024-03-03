@@ -14,10 +14,10 @@
       }
     },
     "Other Devices": {
+      "Talon FX (v6)[10]": {
+        "name": "Climber Motor [10]"
+      },
       "Talon FX (v6)[11]": {
-        "header": {
-          "open": true
-        },
         "name": "Elevator Motor"
       }
     },
@@ -55,6 +55,13 @@
     "visible": false
   },
   "sourceNames": {
-    "DIO[3]": "Elevator Bottom"
+    "DIO[0]": "Intake Sensor",
+    "DIO[1]": "Climber Bottom",
+    "DIO[2]": "Climber Top",
+    "DIO[3]": "Elevator Bottom",
+    "DIO[4]": "Elevator Top",
+    "DIO[5]": "ShooterEncoder",
+    "DIO[6]": "Middle Feed",
+    "DIO[7]": "Top Feed"
   }
 }

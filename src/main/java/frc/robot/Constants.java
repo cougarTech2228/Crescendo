@@ -20,16 +20,32 @@ public class Constants {
 
     // Shooter
     public static final int kShooterFeedMotorId = 21; // Falcon 500
+    public static final String kShooterFeedMotorBus = "rio";
+
     public static final int kShooterFlywheelMotorId = 20; // Falcon 500
+    public static final String kShooterFlywheelMotorBus = "rio";
+
     public static final int kShooterBeltMotorId = 22; // Spark Max
+    public static final String kShooterBeltMotorBus = "rio";
+
 
     public static final int kClimberMotorId = 10; // Falcon
+    public static final String kClimberMotorBus = "canivore";
+
     public static final int kElevatorMotorId = 11; // Falcon
+    public static final String kElevatorMotorBus = "rio";
+
     public static final int kGroundFeedMotorId = 9; // Spark Max
+    public static final String kGroundFeedMotorBus = "rio";
+
     public static final int kBenderTiltMotorId = 7; // Talon SRX
+    public static final String kBenderTiltMotorBus = "rio";
+
     public static final int kBenderFeedMotorId = 15; // Talon SRX
+    public static final String kBenderFeedMotorBus = "rio";
 
     public static final int kLinearActuatorMotorId = 14; // Talon SRX
+      public static final String kLinearActuatorMotorBus = "rio";
 
     // Sensors
     public static final int kGroundFeedSensorId = 0; // Is suppposed to be 0 don't change it

@@ -9,7 +9,6 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
-import frc.robot.Robot;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 
 public class ElevatorSubsystem extends PIDSubsystem {

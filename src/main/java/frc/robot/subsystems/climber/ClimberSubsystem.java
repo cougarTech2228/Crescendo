@@ -1,25 +1,20 @@
 package frc.robot.subsystems.climber;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
-import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Robot;
 
 public class ClimberSubsystem extends SubsystemBase {
 
-    private TalonFX mClimberMotor;
-    private DigitalInput mClimberTopSensor;
-    private DigitalInput mClimberBottomSensor;
-    private final static double LOWERSPEED = -1;
-    private final static double RAISESPEED = 1;
+    // private TalonFX mClimberMotor;
+    // private DigitalInput mClimberTopSensor;
+    // private DigitalInput mClimberBottomSensor;
+    private final static double LOWER_VOLTAGE = -12;
+    private final static double RAISE_VOLTAGE = 12;
 
     enum State {
         STOPPED,
@@ -27,51 +22,65 @@ public class ClimberSubsystem extends SubsystemBase {
         LOWERING
     }
 
+    @AutoLogOutput
     private State currentState = State.STOPPED;
+
+    private final ClimberIO mIO;
+    private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
 
     private static ClimberSubsystem mInstance = null;
 
     public static ClimberSubsystem getInstance() {
         if (mInstance == null) {
-            mInstance = new ClimberSubsystem();
+            switch (Constants.currentMode) {
+                case REAL:
+                    mInstance = new ClimberSubsystem(new ClimberIOHW());
+                    break;
+                case SIM:
+                    mInstance = new ClimberSubsystem(new ClimberIOSim());
+                    break;
+                default:
+                    mInstance = new ClimberSubsystem(new ClimberIO(){});
+                    break;
+            }
         }
         return mInstance;
     }
 
-    private ClimberSubsystem() {
-        mClimberMotor = new TalonFX(Constants.kClimberMotorId, "canivore");
-        mClimberTopSensor = new DigitalInput(Constants.kClimberTopSensorId);
-        mClimberBottomSensor = new DigitalInput(Constants.kClimberBottomSensorId);
-        mClimberMotor.setNeutralMode(NeutralModeValue.Brake);
+    private ClimberSubsystem(ClimberIO io) {
+        mIO = io;
+        mIO.setNeutralMode(NeutralModeValue.Brake);
 
-        if (Robot.isDebug) {
-            ShuffleboardTab m_sbTab = Shuffleboard.getTab("Climber (Debug)");
+        // if (Robot.isDebug) {
+        //     ShuffleboardTab m_sbTab = Shuffleboard.getTab("Climber (Debug)");
 
-            m_sbTab.addBoolean("ClimberTopSensor", new BooleanSupplier() {
-                @Override
-                public boolean getAsBoolean() {
-                    return isClimberAtTop();
-                };
-            });
+        //     m_sbTab.addBoolean("ClimberTopSensor", new BooleanSupplier() {
+        //         @Override
+        //         public boolean getAsBoolean() {
+        //             return isClimberAtTop();
+        //         };
+        //     });
 
-            m_sbTab.addBoolean("ClimberBottomSensor", new BooleanSupplier() {
-                @Override
-                public boolean getAsBoolean() {
-                    return isClimberAtBottom();
-                };
-            });
+        //     m_sbTab.addBoolean("ClimberBottomSensor", new BooleanSupplier() {
+        //         @Override
+        //         public boolean getAsBoolean() {
+        //             return isClimberAtBottom();
+        //         };
+        //     });
 
-            m_sbTab.addDouble("Climber voltage", new DoubleSupplier() {
-                @Override
-                public double getAsDouble() {
-                    return mClimberMotor.getMotorVoltage().getValue();
-                };
-            });
-        }
+        //     m_sbTab.addDouble("Climber voltage", new DoubleSupplier() {
+        //         @Override
+        //         public double getAsDouble() {
+        //             return mClimberMotor.getMotorVoltage().getValue();
+        //         };
+        //     });
+        // }
     }
 
     @Override
     public void periodic() {
+        mIO.updateInputs(inputs);
+        Logger.processInputs("ClimberSubsystem", inputs);
         if (currentState == State.RAISING && isClimberAtTop()) {
             stopMotors();
         } else if (currentState == State.LOWERING && isClimberAtBottom()) {
@@ -82,19 +91,19 @@ public class ClimberSubsystem extends SubsystemBase {
     public boolean isClimberAtTop() {
         // Returns a boolean, true being that the climber is at farthest top it can be
         // not climber.get because it's inverted
-        return !mClimberTopSensor.get();
+        return !inputs.limitSwitchTop;
     }
 
     public boolean isClimberAtBottom() {
         // Returns a boolean, true being that the climber is at farthest bottom it can
         // be
         // not climber.get because it's inverted
-        return !mClimberBottomSensor.get();
+        return !inputs.limitSwitchBottom;
 
     }
 
     public void stopMotors() {
-        mClimberMotor.set(0);
+        mIO.setClimberVoltage(0);
         currentState = State.STOPPED;
     }
 
@@ -102,7 +111,7 @@ public class ClimberSubsystem extends SubsystemBase {
         if (isClimberAtTop()) {
             stopMotors();
         } else {
-            mClimberMotor.set(RAISESPEED);
+            mIO.setClimberVoltage(RAISE_VOLTAGE);
             currentState = State.RAISING;
         }
     }
@@ -111,7 +120,7 @@ public class ClimberSubsystem extends SubsystemBase {
         if (isClimberAtBottom()) {
             stopMotors();
         } else {
-            mClimberMotor.set(LOWERSPEED);
+            mIO.setClimberVoltage(LOWER_VOLTAGE);
             currentState = State.LOWERING;
         }
     }
