@@ -767,6 +767,7 @@ public class ShooterSubsystem extends SubsystemBase {
     @Override
     public void periodic() {
         mIO.updateInputs(inputs);
+        Logger.processInputs("ShooterSubsystem", inputs);
         Logger.recordOutput("ShooterSubsystem/currentState", currentState.mName);
         currentState.run();
     }
