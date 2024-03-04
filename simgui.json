@@ -14,6 +14,16 @@
       }
     },
     "Other Devices": {
+      "DutyCycleEncoder[5]": {
+        "header": {
+          "open": true
+        }
+      },
+      "DutyCycleEncoder[8]": {
+        "header": {
+          "open": true
+        }
+      },
       "Talon FX (v6)[10]": {
         "name": "Climber Motor [10]"
       },
