@@ -45,7 +45,8 @@
       "/Pose": "Field2d",
       "/Shuffleboard/Driver/Auto Chooser": "String Chooser",
       "/SmartDashboard/Auto Choices": "String Chooser",
-      "/SmartDashboard/SelectedAuto": "String Chooser"
+      "/SmartDashboard/SelectedAuto": "String Chooser",
+      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d"
     },
     "windows": {
       "/Pose": {
@@ -61,11 +62,21 @@
       }
     }
   },
+  "NetworkTables": {
+    "transitory": {
+      "Swerve": {
+        "SwerveModuleState[]##v_/Swerve/MyStates": {
+          "SwerveModuleState##v_[0]": {
+            "open": true
+          },
+          "open": true
+        },
+        "open": true
+      }
+    }
+  },
   "NetworkTables Info": {
     "visible": true
-  },
-  "NetworkTables View": {
-    "visible": false
   },
   "sourceNames": {
     "DIO[0]": "Intake Sensor",

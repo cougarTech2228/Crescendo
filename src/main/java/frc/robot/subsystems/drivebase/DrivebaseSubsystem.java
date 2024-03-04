@@ -2,6 +2,7 @@ package frc.robot.subsystems.drivebase;
 
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrainConstants;
@@ -17,6 +18,8 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.generated.TunerConstants;
@@ -29,6 +32,10 @@ import frc.robot.generated.TunerConstants;
 public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double DRIVEBASE_RADIUS_METERS = 0.45085;
     private static final double STATOR_CURRENT_LIMIT = 60.0; // Amps
+
+    private static final double kSimLoopPeriod = 0.005; // 5 ms
+    private Notifier m_simNotifier = null;
+    private double m_lastSimTime;
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 
@@ -62,6 +69,9 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
         getModule(2).getDriveMotor().getConfigurator().apply(limits);
         getModule(3).getDriveMotor().getConfigurator().apply(limits);
 
+        if (Utils.isSimulation()) {
+            startSimThread();
+        }
     }
 
     public Pose2d getCurrentPose() {
@@ -128,5 +138,20 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
                 },
                 this // Reference to this subsystem to set requirements
         );
+    }
+
+    private void startSimThread() {
+        m_lastSimTime = Utils.getCurrentTimeSeconds();
+
+        /* Run simulation at a faster rate so PID gains behave more reasonably */
+        m_simNotifier = new Notifier(() -> {
+            final double currentTime = Utils.getCurrentTimeSeconds();
+            double deltaTime = currentTime - m_lastSimTime;
+            m_lastSimTime = currentTime;
+
+            /* use the measured time delta, get battery voltage from WPILib */
+            updateSimState(deltaTime, RobotController.getBatteryVoltage());
+        });
+        m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
 }
