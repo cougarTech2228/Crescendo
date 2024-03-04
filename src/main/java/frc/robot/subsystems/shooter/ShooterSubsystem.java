@@ -78,7 +78,6 @@ public class ShooterSubsystem extends SubsystemBase {
     private final static double BENDER_SHOOT_SPEED = 1.0;
     private final static double BENDER_FEED_AMP_SPEED = -0.3;
     private final static double BENDER_FEED_SOURCE_SPEED = 0.6;
-    private final static double AMP_SHOOTER_DELAY = 0.5;
     private final static double AMP_PRELOAD_DELAY = 0.25;
     private final static double SOURCE_FEED_SPEED = -0.2;
 
@@ -623,15 +622,12 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     private class FireAmpState extends State {
-        private double shootTimerStart;
-
         public FireAmpState() {
             super("Fire Amp");
         }
 
         @Override
         public void enterState() {
-            shootTimerStart = Timer.getFPGATimestamp();
             mBenderFeedMotor.set(ControlMode.PercentOutput, BENDER_SHOOT_SPEED);
         }
 
@@ -641,7 +637,6 @@ public class ShooterSubsystem extends SubsystemBase {
             mElevatorSubsystem.setPosition(ElevatorSubsystem.Position.HOME);
             mBenderAngleSubsystem.setBenderPosition(BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
         }
-
 
         @Override
         public void onEventInternal(OperatorEvent event) {

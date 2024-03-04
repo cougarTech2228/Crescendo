@@ -1,6 +1,5 @@
 package frc.robot.subsystems.bender;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.math.system.plant.DCMotor;
