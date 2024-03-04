@@ -1,20 +1,12 @@
 package frc.robot.subsystems.bender;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
-import frc.robot.Robot;
 
 public class BenderAngleSubsystem extends PIDSubsystem {
 
@@ -26,13 +18,11 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         PREP_TRAP,
         SHOOT_TRAP
     };
-
-    private ShuffleboardTab m_sbTab;
-    private TalonSRX mBenderTiltMotor;
+    
+    @AutoLogOutput
     private BenderState m_benderState = BenderState.stopped;
-    private DutyCycleEncoder m_benderAngleEncoder;
 
-    private double m_benderAngle;
+    // private double m_benderAngle;
     private BenderPosition m_currentTargetPosition = BenderPosition.SHOOT_SPEAKER;
 
     private static final double kP = 0.08;
@@ -46,8 +36,6 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
     private static final double ANGLE_MIN = 5;
     private static final double ANGLE_MAX = 48;
-
-    private final static double BENDER_SPEED = 0.2;
 
     /** angle where bender is out of the way so we can shoot at the speaker */
     private final static double BENDER_SPEAKER_LOCATION = 51.6;
@@ -82,27 +70,38 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         lowering
     };
 
+    private final BenderAngleIO mIO;
+    private final BenderAngleIOInputsAutoLogged inputs = new BenderAngleIOInputsAutoLogged();
+
     private static BenderAngleSubsystem mInstance = null;
 
     public static BenderAngleSubsystem getInstance() {
         if (mInstance == null) {
-            mInstance = new BenderAngleSubsystem();
+            switch (Constants.currentMode) {
+                case REAL:
+                    mInstance = new BenderAngleSubsystem(new BenderAngleIOHW());
+                    break;
+                case SIM:
+                    mInstance = new BenderAngleSubsystem(new BenderAngleIOSim());
+                    break;
+                default:
+                    mInstance = new BenderAngleSubsystem(new BenderAngleIO(){});
+                    break;
+            }
         }
         return mInstance;
     }
 
-    private BenderAngleSubsystem() {
+    private BenderAngleSubsystem(BenderAngleIO io) {
         super(pidController, 0);
+        mIO = io;
 
         pidController.setTolerance(BENDER_ANGLE_THRESHOLD);
         pidController.setIZone(kIZone);
         pidController.setIntegratorRange(ANGLE_MIN, ANGLE_MAX);
 
-        mBenderTiltMotor = new TalonSRX(Constants.kBenderTiltMotorId);
-        m_benderAngleEncoder = new DutyCycleEncoder(Constants.kBenderAngleEncoderPin);
-
-        mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
-
+        mIO.setBrakeMode();
+/*
         if (Robot.isDebug) {
             m_sbTab = Shuffleboard.getTab("Bender (Debug)");
 
@@ -164,34 +163,40 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
             m_sbTab.add(pidController);
         }
-
-        new Thread("benderAngleEncoder") {
-            public void run() {
-                while (true) {
-                    m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-        }.start();
+*/
+        // new Thread("benderAngleEncoder") {
+        //     public void run() {
+        //         while (true) {
+        //             m_benderAngle = m_benderAngleEncoder.getAbsolutePosition() * 100d;
+        //             try {
+        //                 Thread.sleep(10);
+        //             } catch (InterruptedException e) {
+        //                 e.printStackTrace();
+        //             }
+        //         }
+        //     };
+        // }.start();
     }
 
     private boolean isDisabled = DriverStation.isDisabled();
 
     @Override
     public void periodic() {
+        mIO.updateInputs(inputs);
         super.periodic();
+
+        Logger.processInputs("BenderAngleSubsystem", inputs);
+        Logger.recordOutput("BenderAngleSubsystem/PID/setpoint", pidController.getSetpoint());
+        Logger.recordOutput("BenderAngleSubsystem/PID/positionError", pidController.getPositionError());
+        Logger.recordOutput("BenderAngleSubsystem/PID/atSetpoint", pidController.atSetpoint());
 
         // only send these commands on change
         if (DriverStation.isDisabled() != isDisabled) {
             isDisabled = DriverStation.isDisabled();
             if (isDisabled) {
-                mBenderTiltMotor.setNeutralMode(NeutralMode.Coast);
+                mIO.setCoastMode();
             } else {
-                mBenderTiltMotor.setNeutralMode(NeutralMode.Brake);
+                mIO.setBrakeMode();
             }
         }
 
@@ -210,7 +215,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         if (m_benderState != BenderState.stopped) {
             System.out.println("stopping bender");
             m_benderState = BenderState.stopped;
-            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, 0);
+            mIO.setOutputPercentage(0);
         }
     }
 
@@ -238,9 +243,9 @@ public class BenderAngleSubsystem extends PIDSubsystem {
                 break;
         }
 
-        if (angle > m_benderAngle) {
+        if (angle > getMeasurement()) {
             m_benderState = BenderState.raising;
-        } else if (angle < m_benderAngle) {
+        } else if (angle < getMeasurement()) {
             m_benderState = BenderState.lowering;
         } else {
             m_benderState = BenderState.stopped;
@@ -252,14 +257,6 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         enable();
     }
 
-    private boolean isBenderUpperLimitReached() {
-        return m_benderAngle > ANGLE_MAX;
-    }
-
-    private boolean isBenderLowerLimitReached() {
-        return m_benderAngle < ANGLE_MIN;
-    }
-
     @Override
     public void useOutput(double output, double setpoint) {
         // clamp the output to a sane range
@@ -269,12 +266,12 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         } else {
             val = Math.min(kMotorVoltageLimit, output);
         }
-        mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -val);
+        mIO.setOutputPercentage(-val);
     }
 
     @Override
     public double getMeasurement() {
-        return m_benderAngle;
+        return inputs.benderAngle;
     }
 
     /**
@@ -302,25 +299,5 @@ public class BenderAngleSubsystem extends PIDSubsystem {
 
     public boolean isInTrapPrepLocation() {
         return m_currentTargetPosition == BenderPosition.PREP_TRAP && atGoal();
-    }
-
-    public void raiseBender() {
-        disable();
-        System.out.println("called raise elevator");
-        if (!isBenderUpperLimitReached()) {
-            // mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, BENDER_SPEED);
-            m_benderState = BenderState.raising;
-            System.out.println("raising bender");
-        }
-    }
-
-    public void lowerBender() {
-        disable();
-        System.out.println("called lower elevator");
-        if (!isBenderLowerLimitReached()) {
-            mBenderTiltMotor.set(TalonSRXControlMode.PercentOutput, -BENDER_SPEED);
-            m_benderState = BenderState.lowering;
-            System.out.println("lowering");
-        }
     }
 }
