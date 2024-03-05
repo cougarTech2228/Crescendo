@@ -59,24 +59,65 @@
         "window": {
           "visible": true
         }
+      },
+      "/Shuffleboard/Driver/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
       }
     }
   },
   "NetworkTables": {
     "transitory": {
+      "AdvantageKit": {
+        "Drive": {
+          "Gyro": {
+            "open": true
+          }
+        },
+        "open": true
+      },
+      "Shuffleboard": {
+        "Driver": {
+          "Auto Chooser": {
+            "open": true
+          },
+          "open": true
+        },
+        "open": true
+      },
+      "SmartDashboard": {
+        "SelectedAuto": {
+          "string[]##v_/SmartDashboard/SelectedAuto/options": {
+            "open": true
+          }
+        },
+        "open": true
+      },
       "Swerve": {
         "SwerveModuleState[]##v_/Swerve/MyStates": {
           "SwerveModuleState##v_[0]": {
             "open": true
           },
           "open": true
-        },
-        "open": true
+        }
       }
     }
   },
   "NetworkTables Info": {
+    "Clients": {
+      "open": true
+    },
+    "Connections": {
+      "open": true
+    },
+    "Server": {
+      "open": true
+    },
     "visible": true
+  },
+  "NetworkTables View": {
+    "visible": false
   },
   "sourceNames": {
     "DIO[0]": "Intake Sensor",

@@ -1,0 +1,105 @@
+{
+    "name": "Button Box Left",
+    "components": [
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [260, 70],
+            "sizePx": [100, 100],
+            "sourceIndex": 1
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [437, 70],
+            "sizePx": [100, 100],
+            "sourceIndex": 2
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [101, 230],
+            "sizePx": [100, 100],
+            "sourceIndex": 3
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [600, 230],
+            "sizePx": [100, 100],
+            "sourceIndex": 4
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [101, 400],
+            "sizePx": [100, 100],
+            "sourceIndex": 5
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [600, 400],
+            "sizePx": [100, 100],
+            "sourceIndex": 6
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": false,
+            "centerPx": [292, 562],
+            "sizePx": [151, 61],
+            "sourceIndex": 7
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": true,
+            "centerPx": [490, 559],
+            "sizePx": [100, 100],
+            "sourceIndex": 8
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": false,
+            "centerPx": [354, 235],
+            "sizePx": [70, 100],
+            "sourceIndex": 1,
+            "sourcePov":"up"
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": false,
+            "centerPx": [440, 322],
+            "sizePx": [100, 70],
+            "sourceIndex": 1,
+            "sourcePov":"right"
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": false,
+            "centerPx": [354, 410],
+            "sizePx": [70, 100],
+            "sourceIndex": 1,
+            "sourcePov":"down"
+        },
+        {
+            "type": "button",
+            "isYellow": true,
+            "isEllipse": false,
+            "centerPx": [270, 322],
+            "sizePx": [100, 70],
+            "sourceIndex": 1,
+            "sourcePov":"left"
+        }
+    ]
+}

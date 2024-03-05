@@ -1,6 +1,10 @@
 package frc.robot.subsystems.drivebase;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
@@ -11,18 +15,22 @@ import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
 import com.pathplanner.lib.util.PIDConstants;
+import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.generated.TunerConstants;
+import frc.robot.util.LocalADStarAK;
 
 /**
  * Class that extends the Phoenix SwerveDrivetrain class and implements
@@ -36,6 +44,9 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
+    static final Lock odometryLock = new ReentrantLock();
+
+    private final Telemetry logger = new Telemetry(this::getPigeon2);
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 
@@ -53,7 +64,8 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
         return mInstance;
     }
 
-    private DrivebaseSubsystem(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
+    private DrivebaseSubsystem(SwerveDrivetrainConstants driveTrainConstants,
+            SwerveModuleConstants... modules) {
         super(driveTrainConstants, modules);
         configurePathPlanner();
 
@@ -68,6 +80,8 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
         getModule(1).getDriveMotor().getConfigurator().apply(limits);
         getModule(2).getDriveMotor().getConfigurator().apply(limits);
         getModule(3).getDriveMotor().getConfigurator().apply(limits);
+
+        registerTelemetry(logger::telemeterize);
 
         if (Utils.isSimulation()) {
             startSimThread();
@@ -96,6 +110,17 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
                 pathFollowerConfig,
                 this::getShouldFlipPath,
                 this); // Subsystem for requirements
+
+        Pathfinding.setPathfinder(new LocalADStarAK());
+        PathPlannerLogging.setLogActivePathCallback(
+                (activePath) -> {
+                    Logger.recordOutput(
+                            "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+                });
+        PathPlannerLogging.setLogTargetPoseCallback(
+                (targetPose) -> {
+                    Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+                });
     }
 
     public boolean getShouldFlipPath() {

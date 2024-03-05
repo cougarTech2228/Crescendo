@@ -166,6 +166,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         Logger.recordOutput("ElevatorSubsystem/PID/setpoint", pidController.getSetpoint());
         Logger.recordOutput("ElevatorSubsystem/PID/positionError", pidController.getPositionError());
         Logger.recordOutput("ElevatorSubsystem/PID/atSetpoint", pidController.atSetpoint());
+        Logger.recordOutput("ElevatorSubsystem/PID/enabled", isEnabled());
 
 
         if (DriverStation.isDisabled() != isDisabled) {
@@ -202,7 +203,6 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if (!mIsZeroed) {
             disable();
-            System.out.println("Elevator Auto lower");
             mIO.setElevatorVoltage(ELEVATOR_HOME_VOLTAGE);
             setState(State.LOWERING);
             return;

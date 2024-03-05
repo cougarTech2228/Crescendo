@@ -189,6 +189,7 @@ public class BenderAngleSubsystem extends PIDSubsystem {
         Logger.recordOutput("BenderAngleSubsystem/PID/setpoint", pidController.getSetpoint());
         Logger.recordOutput("BenderAngleSubsystem/PID/positionError", pidController.getPositionError());
         Logger.recordOutput("BenderAngleSubsystem/PID/atSetpoint", pidController.atSetpoint());
+        Logger.recordOutput("BenderAngleSubsystem/PID/enabled", isEnabled());
 
         // only send these commands on change
         if (DriverStation.isDisabled() != isDisabled) {

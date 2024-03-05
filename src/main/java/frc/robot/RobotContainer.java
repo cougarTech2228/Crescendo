@@ -28,6 +28,7 @@ import frc.robot.commands.ShootSpeakerCommand;
 import frc.robot.subsystems.apriltags.AprilTagSubsystem;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drivebase.DrivebaseSubsystem;
+import frc.robot.subsystems.drivebase.Telemetry;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem.OperatorEvent;
 
@@ -67,10 +68,6 @@ public class RobotContainer {
   // private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
   private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-
-  /* Path follower */
-  private final Telemetry logger = new Telemetry(MaxSpeed);
-  //private final SendableChooser<Command> autoChooser;
 
   Command shootFrontCommand = new ShootSpeakerCommand(true);
   Command shootSideCommand = new ShootSpeakerCommand(false);
@@ -127,9 +124,6 @@ public class RobotContainer {
       System.out.println("Prep Trap Button Pressed");
       ShooterSubsystem.getInstance().operatorEvent(OperatorEvent.PREP_TRAP);
     }));
-
-    drivetrain.registerTelemetry(logger::telemeterize);
-
   }
 
   public RobotContainer() {

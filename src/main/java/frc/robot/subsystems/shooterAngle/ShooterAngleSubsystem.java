@@ -133,6 +133,8 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         Logger.recordOutput("ShooterAngleSubsystem/PID/setpoint", pidController.getSetpoint());
         Logger.recordOutput("ShooterAngleSubsystem/PID/positionError", pidController.getPositionError());
         Logger.recordOutput("ShooterAngleSubsystem/PID/atSetpoint", pidController.atSetpoint());
+        Logger.recordOutput("ShooterAngleSubsystem/PID/enabled", isEnabled());
+
         
         if (DriverStation.isDisabled()) {
             disable();
