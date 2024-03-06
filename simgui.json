@@ -1,21 +1,41 @@
 {
   "HALProvider": {
+    "Addressable LEDs": {
+      "0": {
+        "columns": 24
+      },
+      "window": {
+        "visible": true
+      }
+    },
     "DIO": {
       "window": {
         "visible": true
       }
     },
     "Other Devices": {
-      "Pigeon 2 (v6)[61]": {
+      "DutyCycleEncoder[5]": {
         "header": {
           "open": true
         }
       },
-      "Talon FX (v6)[11]": {
+      "DutyCycleEncoder[8]": {
         "header": {
           "open": true
-        },
+        }
+      },
+      "Talon FX (v6)[10]": {
+        "name": "Climber Motor [10]"
+      },
+      "Talon FX (v6)[11]": {
         "name": "Elevator Motor"
+      }
+    },
+    "PowerDistributions": {
+      "0": {
+        "PowerDistribution[0]": {
+          "open": true
+        }
       }
     }
   },
@@ -24,7 +44,9 @@
       "/FMSInfo": "FMSInfo",
       "/Pose": "Field2d",
       "/Shuffleboard/Driver/Auto Chooser": "String Chooser",
-      "/SmartDashboard/Auto Choices": "String Chooser"
+      "/SmartDashboard/Auto Choices": "String Chooser",
+      "/SmartDashboard/SelectedAuto": "String Chooser",
+      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d"
     },
     "windows": {
       "/Pose": {
@@ -37,13 +59,74 @@
         "window": {
           "visible": true
         }
+      },
+      "/Shuffleboard/Driver/Auto Chooser": {
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "AdvantageKit": {
+        "Drive": {
+          "Gyro": {
+            "open": true
+          }
+        },
+        "open": true
+      },
+      "Shuffleboard": {
+        "Driver": {
+          "Auto Chooser": {
+            "open": true
+          },
+          "open": true
+        },
+        "open": true
+      },
+      "SmartDashboard": {
+        "SelectedAuto": {
+          "string[]##v_/SmartDashboard/SelectedAuto/options": {
+            "open": true
+          }
+        },
+        "open": true
+      },
+      "Swerve": {
+        "SwerveModuleState[]##v_/Swerve/MyStates": {
+          "SwerveModuleState##v_[0]": {
+            "open": true
+          },
+          "open": true
+        }
       }
     }
   },
   "NetworkTables Info": {
+    "Clients": {
+      "open": true
+    },
+    "Connections": {
+      "open": true
+    },
+    "Server": {
+      "open": true
+    },
     "visible": true
   },
+  "NetworkTables View": {
+    "visible": false
+  },
   "sourceNames": {
-    "DIO[3]": "Elevator Bottom"
+    "DIO[0]": "Intake Sensor",
+    "DIO[1]": "Climber Bottom",
+    "DIO[2]": "Climber Top",
+    "DIO[3]": "Elevator Bottom",
+    "DIO[4]": "Elevator Top",
+    "DIO[5]": "ShooterEncoder",
+    "DIO[6]": "Middle Feed",
+    "DIO[7]": "Top Feed"
   }
 }
