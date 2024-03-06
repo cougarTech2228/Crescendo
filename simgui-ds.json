@@ -13,6 +13,11 @@
         {
           "decayRate": 0.0,
           "keyRate": 0.009999999776482582
+        },
+        {},
+        {
+          "decKey": 44,
+          "incKey": 46
         }
       ],
       "axisCount": 5,

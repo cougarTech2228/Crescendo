@@ -42,12 +42,11 @@ public class AprilTagSubsystem extends SubsystemBase {
     DrivebaseSubsystem drivebaseSubsystem;
     public AprilTagFieldLayout aprilTagFieldLayout;
 
-    Transform2d cameraOffsetTransform = new Transform2d(-0.64, -0.1, Rotation2d.fromDegrees(180));
-    Transform3d cameraOffsetTransform3d = new Transform3d(
-        cameraOffsetTransform.getX(),
-        cameraOffsetTransform.getY(),
-        0,
-        new Rotation3d(0,0,cameraOffsetTransform.getRotation().getRadians()));
+    Transform3d robotToCameraTransform = new Transform3d(
+        -0.64, // x
+        0, // y
+        0.4, // z
+        new Rotation3d(0,Math.toRadians(-30),Math.toRadians(-180)));
 //double roll, double pitch, double yaw
     private static final int RED_AMP_TAG_ID = 5;
     private static final int BLUE_AMP_TAG_ID = 6;
@@ -82,7 +81,7 @@ public class AprilTagSubsystem extends SubsystemBase {
 
         photonEstimator =
                 new PhotonPoseEstimator(
-                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, camera, cameraOffsetTransform3d);
+                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, camera, robotToCameraTransform);
         photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
 
@@ -103,7 +102,7 @@ public class AprilTagSubsystem extends SubsystemBase {
             // targets.
             cameraSim = new PhotonCameraSim(camera, cameraProp);
             // Add the simulated camera to view the targets on this simulated field.
-            visionSim.addCamera(cameraSim, cameraOffsetTransform3d);
+            visionSim.addCamera(cameraSim, robotToCameraTransform);
 
             cameraSim.enableDrawWireframe(true);
         }
