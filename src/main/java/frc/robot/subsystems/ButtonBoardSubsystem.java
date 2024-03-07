@@ -90,11 +90,11 @@ public class ButtonBoardSubsystem extends SubsystemBase {
     }
 
     private JoystickButton raiseBenderButton() {
-        return new JoystickButton(m_joystick1, 5);
+        return new JoystickButton(m_joystick1, 6);
     }
 
     private JoystickButton lowerBenderButton() {
-        return new JoystickButton(m_joystick1, 6);
+        return new JoystickButton(m_joystick1, 5);
     }
 
     private JoystickButton test1Button() {
