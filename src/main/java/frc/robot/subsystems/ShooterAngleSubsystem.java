@@ -97,6 +97,9 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         // pidController.setIntegratorRange(ANGLE_MIN, ANGLE_MAX);
 
         mLinearActuatorMotor = new TalonSRX(Constants.kLinearActuatorMotorId);
+        mLinearActuatorMotor.configPeakCurrentLimit(20, 10); /* 20 A */
+        mLinearActuatorMotor.configPeakCurrentDuration(100, 10); /* 100ms */
+        mLinearActuatorMotor.configContinuousCurrentLimit(15, 10); /* 30 */
         mShooterAngleEncoder = new DutyCycleEncoder(Constants.kShooterAngleEncoderId);
         mLinearActuatorMotor.setNeutralMode(NeutralMode.Brake);
 
