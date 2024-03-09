@@ -34,7 +34,7 @@ import frc.robot.generated.TunerConstants;
  */
 public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double DRIVEBASE_RADIUS_METERS = 0.45085;
-    private static final double STATOR_CURRENT_LIMIT = 60.0; // Amps
+    private static final double STATOR_CURRENT_LIMIT = 70.0; // Amps
 
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 

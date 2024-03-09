@@ -23,6 +23,10 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.networktables.DoubleArrayPublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -41,10 +45,14 @@ public class AprilTagSubsystem extends SubsystemBase {
     DrivebaseSubsystem drivebaseSubsystem;
     public AprilTagFieldLayout aprilTagFieldLayout;
 
+    private final NetworkTable table = NetworkTableInstance.getDefault().getTable("VisionPose");
+    private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("robotPose").publish();
+    private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
+
     Transform3d robotToCameraTransform = new Transform3d(
-        -0.64, // x
-        0, // y
-        0.4, // z
+        -0.6, // x
+        0.015, // y
+        0.585, // z
         new Rotation3d(0,Math.toRadians(-30),Math.toRadians(-180)));
 //double roll, double pitch, double yaw
     private static final int RED_AMP_TAG_ID = 5;
@@ -136,6 +144,13 @@ public class AprilTagSubsystem extends SubsystemBase {
                 visionEst.ifPresent(
                         est -> {
                             var estPose = est.estimatedPose.toPose2d();
+
+                            fieldTypePub.set("Field2d");
+                            fieldPub.set(new double[] {
+                                    estPose.getX(),
+                                    estPose.getY(),
+                                    estPose.getRotation().getDegrees()
+                            });
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs(estPose);
         
