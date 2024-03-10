@@ -55,9 +55,9 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     Transform3d robotToRearCameraTransform = new Transform3d(
         -0.4, // x
-        0.01905, // y
+        -0.07, // y
         0.2286, // z
-        new Rotation3d(0,Math.toRadians(-34),Math.toRadians(180)));
+        new Rotation3d(0,Math.toRadians(-34),Math.toRadians(179)));
 
     Transform3d robotToSideCameraTransform = new Transform3d(
         0.06, // x

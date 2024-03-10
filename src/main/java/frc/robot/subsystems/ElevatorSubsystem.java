@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 import frc.robot.Robot;
+import frc.robot.subsystems.BenderAngleSubsystem.BenderPosition;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -176,6 +177,7 @@ public class ElevatorSubsystem extends PIDSubsystem {
         if (!mIsZeroed) {
             disable();
             System.out.println ("Elevator Auto lower");
+            BenderAngleSubsystem.getInstance().setBenderPosition(BenderPosition.SHOOT_SPEAKER);
             mElevatorMotor.set(ELEVATOR_SPEED_DOWN/4);
             setState(State.LOWERING);
             return;
