@@ -50,6 +50,8 @@ public class RobotContainer {
   private static final String kAutoPos2_2_3 = "Pos2_2_3";
   private static final String kAutoPos2_2_5 = "Pos2_2_5";
   private static final String kAutoPos2_2_3_1 = "Pos2_2_3_1";
+  private static final String kAutoPos3_3 = "Pos3_3";
+  private static final String kAutoPos3_3_8 = "Pos3_3_8";
   private static final String kAutoPos3_8 = "Pos3_8";
   
 
@@ -62,7 +64,7 @@ public class RobotContainer {
   public final ButtonBoard buttonBoardSubsystem = ButtonBoard.getInstance();
 
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-      .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+      .withDeadband(MaxSpeed * 0.03).withRotationalDeadband(MaxAngularRate * 0.03) // Add a 3% deadband
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // I want field-centric
                                                                // driving in open loop
   // private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
@@ -144,8 +146,10 @@ public class RobotContainer {
     m_auto_chooser.addOption("Pos2_2_3", kAutoPos2_2_3);
     m_auto_chooser.addOption("Pos2_2_5", kAutoPos2_2_5);
     m_auto_chooser.addOption("Pos2_2_3_1", kAutoPos2_2_3_1);
+    m_auto_chooser.addOption("Pos3_3", kAutoPos3_3);
     m_auto_chooser.addOption("Pos3_8", kAutoPos3_8);
-    driverTab.add("Auto Chooser", m_auto_chooser.getSendableChooser())
+    m_auto_chooser.addOption("Pos3_3_8", kAutoPos3_3_8);
+    driverTab.add("Auto Chooser", m_auto_chooser)
       .withPosition(6, 0)
       .withSize(2,1);
 

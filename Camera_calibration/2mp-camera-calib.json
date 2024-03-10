@@ -1,0 +1,36 @@
+{
+    "camera": "USB GS Camera (0edc:2076)",
+    "platform": "Windows NT 10.0; Win64; x64",
+    "camera_matrix": [
+        [
+            733.2512188082674,
+            0,
+            614.4920726161072
+        ],
+        [
+            0,
+            729.5437787728937,
+            412.70483431975106
+        ],
+        [
+            0,
+            0,
+            1
+        ]
+    ],
+    "distortion_coefficients": [
+        0.11194809148313838,
+        -0.19427380089688095,
+        -0.00012744563753301397,
+        0.0008044342674009173,
+        0.06429559732521241
+    ],
+    "distortion_model": "rectilinear",
+    "avg_reprojection_error": 0.3361369973982157,
+    "img_size": [
+        1280,
+        720
+    ],
+    "keyframes": 7,
+    "calibration_time": "Thu, 07 Mar 2024 02:00:27 GMT"
+}

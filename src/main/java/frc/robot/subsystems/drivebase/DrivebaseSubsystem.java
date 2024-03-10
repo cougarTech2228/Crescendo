@@ -5,7 +5,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.Logger;
-
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain;
@@ -21,9 +20,12 @@ import com.pathplanner.lib.util.PIDConstants;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -39,7 +41,7 @@ import frc.robot.util.LocalADStarAK;
  */
 public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private static final double DRIVEBASE_RADIUS_METERS = 0.45085;
-    private static final double STATOR_CURRENT_LIMIT = 60.0; // Amps
+    private static final double STATOR_CURRENT_LIMIT = 70.0; // Amps
 
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private Notifier m_simNotifier = null;
@@ -51,6 +53,9 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
     private final SwerveRequest.ApplyChassisSpeeds autoRequest = new SwerveRequest.ApplyChassisSpeeds();
 
     private static DrivebaseSubsystem mInstance = null;
+
+    private final static Vector<N3> odometryStandardDeviation = VecBuilder.fill(0.05, 0.05, 0.01);
+    private final static Vector<N3> visionStandardDeviation = VecBuilder.fill(0.3, 0.3, 99);
 
     public static DrivebaseSubsystem getInstance() {
         if (mInstance == null) {
@@ -64,9 +69,13 @@ public class DrivebaseSubsystem extends SwerveDrivetrain implements Subsystem {
         return mInstance;
     }
 
-    private DrivebaseSubsystem(SwerveDrivetrainConstants driveTrainConstants,
-            SwerveModuleConstants... modules) {
-        super(driveTrainConstants, modules);
+    private DrivebaseSubsystem(SwerveDrivetrainConstants driveTrainConstants, SwerveModuleConstants... modules) {
+        super(driveTrainConstants, 0, odometryStandardDeviation, visionStandardDeviation, modules);
+        /*
+         * SwerveDrivetrainConstants driveTrainConstants, double OdometryUpdateFrequency,
+            Matrix<N3, N1> odometryStandardDeviation, Matrix<N3, N1> visionStandardDeviation,
+            SwerveModuleConstants... modules
+         */
         configurePathPlanner();
 
         // Apply current limits to the motors to smooth out the accelleration and

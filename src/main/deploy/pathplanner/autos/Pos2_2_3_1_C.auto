@@ -1,0 +1,86 @@
+{
+  "version": 1.0,
+  "startingPose": {
+    "position": {
+      "x": 1.3381340503692627,
+      "y": 5.56
+    },
+    "rotation": 0.0
+  },
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "sequential",
+          "data": {
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "shootSpeakerFront"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "pos_2_to_note_2"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "note_2_to_pos_2"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "shootSpeakerFront"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "pos_2_to_note_3"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "note_3_to_pos_2"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "shootSpeakerFront"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "pos_2_to_note_1"
+                }
+              },
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "note_1_to_pos_2"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "shootSpeakerFront"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "folder": null,
+  "choreoAuto": true
+}

@@ -1,5 +1,7 @@
 package frc.robot.subsystems.shooter;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -401,8 +403,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
         @Override
         public void run() {
-            if (mBenderAngleSubsystem.isInSpeakerLocation() &&
-                inputs.flywheelMotorVelocity >= 102) {
+            double v = inputs.flywheelMotorVelocity;
+            if (mBenderAngleSubsystem.isInSpeakerLocation() && v >= 95) {
                 changeState(mFireSpeakerState);
             }
         }
@@ -760,7 +762,6 @@ public class ShooterSubsystem extends SubsystemBase {
             }
         }).withPosition(6, 1)
           .withSize(2, 1);
-
         mEmptyState.enterState();
     }
 
