@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -410,7 +411,7 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             double v = mShooterFlywheelMotor.getVelocity().getValue();
             SmartDashboard.putNumber("Flywheel", v);
-            if (mBenderAngleSubsystem.isInSpeakerLocation() && v >= 102) {
+            if (mBenderAngleSubsystem.isInSpeakerLocation() && v >= 95) {
                 changeState(mFireSpeakerState);
             }
         }
@@ -823,6 +824,12 @@ public class ShooterSubsystem extends SubsystemBase {
                 public String get() {
                     return currentState.toString();
                 }
+            });
+            sbTab.addDouble("Shooter velocity", new DoubleSupplier() {
+                @Override
+                public double getAsDouble() {
+                    return mShooterFlywheelMotor.getVelocity().getValue();
+                };
             });
         }
 

@@ -34,8 +34,10 @@ import frc.robot.Robot;
 import frc.robot.subsystems.DrivebaseSubsystem;
 
 public class AprilTagSubsystem extends SubsystemBase {
-    private PhotonCamera camera;
-    private final PhotonPoseEstimator photonEstimator;
+    private PhotonCamera rearCamera;
+    private PhotonCamera rightSideCamera;
+    private final PhotonPoseEstimator rearCameraPhotonEstimator;
+    private final PhotonPoseEstimator sideCameraPhotonEstimator;
 
     // Simulation
     private PhotonCameraSim cameraSim;
@@ -46,14 +48,22 @@ public class AprilTagSubsystem extends SubsystemBase {
     public AprilTagFieldLayout aprilTagFieldLayout;
 
     private final NetworkTable table = NetworkTableInstance.getDefault().getTable("VisionPose");
-    private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("robotPose").publish();
-    private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
+    private final DoubleArrayPublisher rearPosePub = table.getDoubleArrayTopic("robotPoseRear").publish();
+    private final DoubleArrayPublisher rightSidePosePub = table.getDoubleArrayTopic("robotPoseRightSide").publish();
 
-    Transform3d robotToCameraTransform = new Transform3d(
-        -0.6, // x
-        0.015, // y
-        0.585, // z
-        new Rotation3d(0,Math.toRadians(-30),Math.toRadians(-180)));
+    private final StringPublisher poseTypePub = table.getStringTopic(".type").publish();
+
+    Transform3d robotToRearCameraTransform = new Transform3d(
+        -0.4, // x
+        0.01905, // y
+        0.2286, // z
+        new Rotation3d(0,Math.toRadians(-34),Math.toRadians(180)));
+
+    Transform3d robotToSideCameraTransform = new Transform3d(
+        0.06, // x
+        -0.55, // y
+        0.2286, // z
+        new Rotation3d(0,Math.toRadians(-29),Math.toRadians(-90)));
 //double roll, double pitch, double yaw
     private static final int RED_AMP_TAG_ID = 5;
     private static final int BLUE_AMP_TAG_ID = 6;
@@ -62,8 +72,8 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     // The standard deviations of our vision estimated poses, which affect correction rate
     // (Fake values. Experiment and determine estimation noise on an actual robot.)
-    public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(1, 1, 99);
-    public static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.3, 0.3, 99);
+    public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(1, 1, Math.toRadians(5));
+    public static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.3, 0.3, Math.toRadians(3));
     private double lastEstTimestamp = 0;
 
     private static AprilTagSubsystem mInstance = null;
@@ -77,7 +87,8 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     private AprilTagSubsystem(DrivebaseSubsystem drivebaseSubsystem) {
         this.drivebaseSubsystem = drivebaseSubsystem;
-        camera = new PhotonCamera("AprilTagCamera");
+        rearCamera = new PhotonCamera("AprilTagCamera");
+        rightSideCamera = new PhotonCamera("AprilTagCameraSide");
 
         try {
             aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
@@ -86,10 +97,15 @@ public class AprilTagSubsystem extends SubsystemBase {
         }
 
 
-        photonEstimator =
+        rearCameraPhotonEstimator =
                 new PhotonPoseEstimator(
-                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, camera, robotToCameraTransform);
-        photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rearCamera, robotToRearCameraTransform);
+        rearCameraPhotonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
+
+        sideCameraPhotonEstimator =
+                new PhotonPoseEstimator(
+                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightSideCamera, robotToSideCameraTransform);
+        sideCameraPhotonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
 
         // ----- Simulation
@@ -107,9 +123,9 @@ public class AprilTagSubsystem extends SubsystemBase {
             cameraProp.setLatencyStdDevMs(15);
             // Create a PhotonCameraSim which will update the linked PhotonCamera's values with visible
             // targets.
-            cameraSim = new PhotonCameraSim(camera, cameraProp);
+            cameraSim = new PhotonCameraSim(rearCamera, cameraProp);
             // Add the simulated camera to view the targets on this simulated field.
-            visionSim.addCamera(cameraSim, robotToCameraTransform);
+            visionSim.addCamera(cameraSim, robotToRearCameraTransform);
 
             cameraSim.enableDrawWireframe(true);
         }
@@ -130,33 +146,59 @@ public class AprilTagSubsystem extends SubsystemBase {
     //     return (estimatedPose.best.getX() < 4.0) || (estimatedPose.best.getX() > 12);
     // }
 
+    static private double lastRear2TagReading = 0;
     Thread processingThread = new Thread("AprilTag Thread") {
         @Override
         public void run() {
             System.out.println("AprilTag Processing Thread started");
+            
             while (true) {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                var visionEst = getEstimatedGlobalPose();
-                visionEst.ifPresent(
+                var rearVisionEst = getEstimatedGlobalPose(rearCameraPhotonEstimator, rearCamera);
+                rearVisionEst.ifPresent(
                         est -> {
-                            var estPose = est.estimatedPose.toPose2d();
-
-                            fieldTypePub.set("Field2d");
-                            fieldPub.set(new double[] {
+                            Pose2d estPose = est.estimatedPose.toPose2d();
+                            poseTypePub.set("Field2d");
+                            rearPosePub.set(new double[] {
                                     estPose.getX(),
                                     estPose.getY(),
-                                    estPose.getRotation().getDegrees()
+                                    estPose.getRotation().getRadians()
                             });
                             // Change our trust in the measurement based on the tags we can see
-                            var estStdDevs = getEstimationStdDevs(estPose);
+                            var estStdDevs = getEstimationStdDevs(estPose, rearCameraPhotonEstimator);
+
+                            if (est.targetsUsed.size() >= 2) {
+                                lastRear2TagReading = est.timestampSeconds;
+                            }
         
                             drivebaseSubsystem.addVisionMeasurement(
-                                    est.estimatedPose.toPose2d(), est.timestampSeconds, estStdDevs);
+                                    estPose, est.timestampSeconds, estStdDevs);
                         });
+
+                if (rearVisionEst.isEmpty() || (rearVisionEst.isPresent() && rearVisionEst.get().targetsUsed.size() < 2 )) {
+                    var sideVisionEst = getEstimatedGlobalPose(sideCameraPhotonEstimator, rightSideCamera);
+                    sideVisionEst.ifPresent(
+                            est -> {
+                                if (est.timestampSeconds - lastRear2TagReading > 0.25) {
+                                    Pose2d estPose = est.estimatedPose.toPose2d();
+                                    poseTypePub.set("Field2d");
+                                    rightSidePosePub.set(new double[] {
+                                            estPose.getX(),
+                                            estPose.getY(),
+                                            estPose.getRotation().getRadians()
+                                    });
+                                    // Change our trust in the measurement based on the tags we can see
+                                    var estStdDevs = getEstimationStdDevs(estPose, sideCameraPhotonEstimator);
+                
+                                    // drivebaseSubsystem.addVisionMeasurement(
+                                    //     estPose, est.timestampSeconds, estStdDevs);
+                                }
+                            });
+                }
                 // PhotonPipelineResult res = camera.getLatestResult();
 
                 // if (res.hasTargets()) {
@@ -235,8 +277,8 @@ public class AprilTagSubsystem extends SubsystemBase {
      * @return An {@link EstimatedRobotPose} with an estimated pose, estimate timestamp, and targets
      *     used for estimation.
      */
-    public Optional<EstimatedRobotPose> getEstimatedGlobalPose() {
-        var visionEst = photonEstimator.update();
+    public Optional<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator estimator, PhotonCamera camera) {
+        var visionEst = estimator.update();
         double latestTimestamp = camera.getLatestResult().getTimestampSeconds();
         boolean newResult = Math.abs(latestTimestamp - lastEstTimestamp) > 1e-5;
         if (Robot.isSimulation()) {
@@ -253,19 +295,19 @@ public class AprilTagSubsystem extends SubsystemBase {
     }
 
     /**
-     * The standard deviations of the estimated pose from {@link #getEstimatedGlobalPose()}, for use
+     * The standard deviations of the estimated pose from {@link #getEstimatedRearGlobalPose()}, for use
      * with {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator SwerveDrivePoseEstimator}.
      * This should only be used when there are targets visible.
      *
      * @param estimatedPose The estimated pose to guess standard deviations for.
      */
-    public Matrix<N3, N1> getEstimationStdDevs(Pose2d estimatedPose) {
+    public Matrix<N3, N1> getEstimationStdDevs(Pose2d estimatedPose, PhotonPoseEstimator estimator) {
         var estStdDevs = kSingleTagStdDevs;
-        var targets = camera.getLatestResult().getTargets();
+        var targets = rearCamera.getLatestResult().getTargets();
         int numTags = 0;
         double avgDist = 0;
         for (var tgt : targets) {
-            var tagPose = photonEstimator.getFieldTags().getTagPose(tgt.getFiducialId());
+            var tagPose = estimator.getFieldTags().getTagPose(tgt.getFiducialId());
             if (tagPose.isEmpty()) continue;
             numTags++;
             avgDist += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
