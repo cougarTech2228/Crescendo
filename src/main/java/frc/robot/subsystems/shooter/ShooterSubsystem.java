@@ -255,6 +255,8 @@ public class ShooterSubsystem extends SubsystemBase {
                 case SPIT:
                     changeState(mSpitState);
                     break;
+                case PREP_SOURCE:
+                    changeState(mPrepSourceState);
                 default:
                     System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
@@ -312,6 +314,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     isAmp = false;
                     changeState(mBenderLoadInternalPrepState);
                     break;
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
                 default:
                     System.out.println("Ignoring event " + event + " in LoadedState");
             }
@@ -334,6 +339,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 changeState(mEmptyState);
             }
         }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
     }
 
     private class PrepSpeakerSideEmptyState extends State {
@@ -350,6 +366,17 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if (mShooterAngleSubsystem.isInSpeakerLocation_side()) {
                 changeState(mEmptyState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -370,6 +397,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 changeState(mLoadedState);
             }
         }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
     }
 
     private class PrepSpeakerSideLoadedState extends State {
@@ -386,6 +424,17 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if (mShooterAngleSubsystem.isInSpeakerLocation_side()) {
                 changeState(mLoadedState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -406,6 +455,17 @@ public class ShooterSubsystem extends SubsystemBase {
             double v = inputs.flywheelMotorVelocity;
             if (mBenderAngleSubsystem.isInSpeakerLocation() && v >= 95) {
                 changeState(mFireSpeakerState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -436,6 +496,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 changeState(mEmptyState);
             }
         }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
     }
 
     private class BenderLoadInternalPrepState extends State {
@@ -452,6 +523,17 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if (mBenderAngleSubsystem.isInInternalLoadingLocation()) {
                 changeState(mBenderLoadInternalLoadBenderState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -473,6 +555,17 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if (inputs.isNoteAtTop) {
                 changeState(mBenderLoadInternalBenderExitingMiddleState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -499,6 +592,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 }
             }
         }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
     }
 
     private class BenderLoadInternalLoadedAmpState extends State {
@@ -523,6 +627,9 @@ public class ShooterSubsystem extends SubsystemBase {
             switch (event) {
                 case FIRE:
                     changeState(mFireAmpState);
+                    break;
+                case SPIT:
+                    changeState(mSpitState);
                     break;
                 default:
                     System.out.println("Ignoring event " + event + " in ReadyForFireAmpState");
@@ -565,6 +672,9 @@ public class ShooterSubsystem extends SubsystemBase {
                 case PREP_TRAP:
                     changeState(mReadyForFireTrapState);
                     break;
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
                 default:
                     System.out.println("Ignoring event " + event + " in LoadedTrap");
                     break;
@@ -582,6 +692,9 @@ public class ShooterSubsystem extends SubsystemBase {
             switch (event) {
                 case FIRE:
                     changeState(mFireAmpState);
+                    break;
+                case SPIT:
+                    changeState(mSpitState);
                     break;
                 default:
                     System.out.println("Ignoring event " + event + " in ReadyForFireAmpState");
@@ -605,6 +718,9 @@ public class ShooterSubsystem extends SubsystemBase {
             switch (event) {
                 case FIRE:
                     changeState(mFireTrapState);
+                    break;
+                case SPIT:
+                    changeState(mSpitState);
                     break;
                 default:
                     System.out.println("Ignoring event " + event + " in ReadyForFireTrapState");
@@ -637,6 +753,9 @@ public class ShooterSubsystem extends SubsystemBase {
                     mIO.setBenderFeedMotorVoltage(0);
                     changeState(mEmptyState);
                     break;
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
                 default:
                     System.out.println("Ignoring event " + event + " in FireAmpState");
                     break;
@@ -660,6 +779,9 @@ public class ShooterSubsystem extends SubsystemBase {
                 case FIRE:
                     mIO.setBenderFeedMotorVoltage(0);
                     changeState(mEmptyState);
+                    break;
+                case SPIT:
+                    changeState(mSpitState);
                     break;
                 default:
                     System.out.println("Ignoring event " + event + " in FireTrapState");
@@ -694,6 +816,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 changeState(mSourceLoadingState);
             }
         }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
+            }
+        }
     }
 
     private class SourceLoadingState extends State {
@@ -705,6 +838,17 @@ public class ShooterSubsystem extends SubsystemBase {
         public void run() {
             if (!inputs.isNoteAtTop) {
                 changeState(mSourceLoadedState);
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }
@@ -720,6 +864,17 @@ public class ShooterSubsystem extends SubsystemBase {
                 changeState(mLoadedState);
                 stopBenderMotor();
                 prepSpeakerFront();
+            }
+        }
+
+        @Override
+        public void onEventInternal(OperatorEvent event) {
+            switch (event) {
+                case SPIT:
+                    changeState(mSpitState);
+                    break;
+                default:
+                    System.out.println("Ignoring event " + event + " in Acquiring Bottom State");
             }
         }
     }

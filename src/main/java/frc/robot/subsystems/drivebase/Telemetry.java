@@ -1,7 +1,5 @@
 package frc.robot.subsystems.drivebase;
 
-import static edu.wpi.first.units.Units.Rotation;
-
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.Utils;

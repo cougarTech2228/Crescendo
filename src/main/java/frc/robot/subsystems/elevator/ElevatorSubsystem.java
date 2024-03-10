@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.robot.Constants;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
+import frc.robot.subsystems.bender.BenderAngleSubsystem;
 
 public class ElevatorSubsystem extends PIDSubsystem {
 
@@ -203,6 +204,9 @@ public class ElevatorSubsystem extends PIDSubsystem {
 
         if (!mIsZeroed) {
             disable();
+            System.out.println ("Elevator Auto lower");
+            BenderAngleSubsystem.getInstance().setBenderPosition(
+                BenderAngleSubsystem.BenderPosition.SHOOT_SPEAKER);
             mIO.setElevatorVoltage(ELEVATOR_HOME_VOLTAGE);
             setState(State.LOWERING);
             return;

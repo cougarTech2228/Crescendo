@@ -28,7 +28,6 @@ import frc.robot.commands.ShootSpeakerCommand;
 import frc.robot.subsystems.apriltags.AprilTagSubsystem;
 import frc.robot.subsystems.climber.ClimberSubsystem;
 import frc.robot.subsystems.drivebase.DrivebaseSubsystem;
-import frc.robot.subsystems.drivebase.Telemetry;
 import frc.robot.subsystems.shooter.ShooterSubsystem;
 import frc.robot.subsystems.shooter.ShooterSubsystem.OperatorEvent;
 
@@ -149,7 +148,7 @@ public class RobotContainer {
     m_auto_chooser.addOption("Pos3_3", kAutoPos3_3);
     m_auto_chooser.addOption("Pos3_8", kAutoPos3_8);
     m_auto_chooser.addOption("Pos3_3_8", kAutoPos3_3_8);
-    driverTab.add("Auto Chooser", m_auto_chooser)
+    driverTab.add("Auto Chooser", m_auto_chooser.getSendableChooser())
       .withPosition(6, 0)
       .withSize(2,1);
 
