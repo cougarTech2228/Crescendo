@@ -62,7 +62,7 @@ public class Telemetry {
         fieldPub.set(new double[] {
             pose.getX(),
             pose.getY(),
-            pose.getRotation().getDegrees()
+            pose.getRotation().getRadians()
         });
 
         /* Telemeterize the robot's general speeds */
@@ -84,7 +84,7 @@ public class Telemetry {
             pigeonRot.getX(),
             pigeonRot.getY(),
             pigeonRot.getZ(),
-            pigeonRot.getAngle()
+            Math.toRadians(pigeonRot.getAngle())
         });
 
         currentStatesPublisher.set(state.ModuleStates);
