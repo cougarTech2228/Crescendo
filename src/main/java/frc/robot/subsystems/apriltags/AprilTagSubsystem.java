@@ -3,6 +3,7 @@ package frc.robot.subsystems.apriltags;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -23,10 +24,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.networktables.DoubleArrayPublisher;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -47,12 +44,6 @@ public class AprilTagSubsystem extends SubsystemBase {
     DrivebaseSubsystem drivebaseSubsystem;
     public AprilTagFieldLayout aprilTagFieldLayout;
 
-    private final NetworkTable table = NetworkTableInstance.getDefault().getTable("VisionPose");
-    private final DoubleArrayPublisher rearPosePub = table.getDoubleArrayTopic("robotPoseRear").publish();
-    private final DoubleArrayPublisher rightSidePosePub = table.getDoubleArrayTopic("robotPoseRightSide").publish();
-
-    private final StringPublisher poseTypePub = table.getStringTopic(".type").publish();
-
     Transform3d robotToRearCameraTransform = new Transform3d(
         -0.4, // x
         -0.07, // y
@@ -64,7 +55,7 @@ public class AprilTagSubsystem extends SubsystemBase {
         -0.55, // y
         0.2286, // z
         new Rotation3d(0,Math.toRadians(-29),Math.toRadians(-90)));
-//double roll, double pitch, double yaw
+
     private static final int RED_AMP_TAG_ID = 5;
     private static final int BLUE_AMP_TAG_ID = 6;
 
@@ -162,12 +153,8 @@ public class AprilTagSubsystem extends SubsystemBase {
                 rearVisionEst.ifPresent(
                         est -> {
                             Pose2d estPose = est.estimatedPose.toPose2d();
-                            poseTypePub.set("Field2d");
-                            rearPosePub.set(new double[] {
-                                    estPose.getX(),
-                                    estPose.getY(),
-                                    estPose.getRotation().getRadians()
-                            });
+                            // Logger.recordOutput("Pose/Vision/Rear", estPose);
+
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs(estPose, rearCameraPhotonEstimator);
 
@@ -179,58 +166,20 @@ public class AprilTagSubsystem extends SubsystemBase {
                                     estPose, est.timestampSeconds, estStdDevs);
                         });
 
-                if (rearVisionEst.isEmpty() || (rearVisionEst.isPresent() && rearVisionEst.get().targetsUsed.size() < 2 )) {
-                    var sideVisionEst = getEstimatedGlobalPose(sideCameraPhotonEstimator, rightSideCamera);
-                    sideVisionEst.ifPresent(
-                            est -> {
-                                if (est.timestampSeconds - lastRear2TagReading > 0.25) {
-                                    Pose2d estPose = est.estimatedPose.toPose2d();
-                                    poseTypePub.set("Field2d");
-                                    rightSidePosePub.set(new double[] {
-                                            estPose.getX(),
-                                            estPose.getY(),
-                                            estPose.getRotation().getRadians()
-                                    });
-                                    // Change our trust in the measurement based on the tags we can see
-                                    var estStdDevs = getEstimationStdDevs(estPose, sideCameraPhotonEstimator);
+                // if (rearVisionEst.isEmpty() || (rearVisionEst.isPresent() && rearVisionEst.get().targetsUsed.size() < 2 )) {
+                //     var sideVisionEst = getEstimatedGlobalPose(sideCameraPhotonEstimator, rightSideCamera);
+                //     sideVisionEst.ifPresent(
+                //             est -> {
+                //                 if (est.timestampSeconds - lastRear2TagReading > 0.25) {
+                //                     Pose2d estPose = est.estimatedPose.toPose2d();
+                //                     // Logger.recordOutput("Pose/Vision/Side", estPose);
+                //                     // Change our trust in the measurement based on the tags we can see
+                //                     // var estStdDevs = getEstimationStdDevs(estPose, sideCameraPhotonEstimator);
                 
-                                    // drivebaseSubsystem.addVisionMeasurement(
-                                    //     estPose, est.timestampSeconds, estStdDevs);
-                                }
-                            });
-                }
-                // PhotonPipelineResult res = camera.getLatestResult();
-
-                // if (res.hasTargets()) {
-                //     // PhotonTrackedTarget bestTarget = res.getBestTarget();
-                //     double imageCaptureTime = res.getTimestampSeconds();
-                //     var estimatedPose = res.getMultiTagResult().estimatedPose;
-
-                //     if (estimatedPose.isPresent && isSaneMeasurement(estimatedPose)) {
-                //         Pose2d adjustedPose = new Pose3d(estimatedPose.best.getTranslation(),
-                //                 estimatedPose.best.getRotation()).toPose2d().transformBy(cameraOffsetTransform);
-
-                //         drivebaseSubsystem.addVisionMeasurement(adjustedPose, imageCaptureTime);
-                //         SmartDashboard.putBoolean("Is Using Vision", true);
-                //         // System.out.println("adding measurement " + adjustedPose + ", error: " +
-                //         // estimatedPose.bestReprojErr);
-                //     } else {
-                //         SmartDashboard.putBoolean("Is Using Vision", false);
-                //     }
-                //     // } else if (bestTarget != null) {
-                //     // Transform3d camToTargetTrans = bestTarget.getBestCameraToTarget();
-                //     // //camToTargetTrans.plus( new Transform3d(
-                //     // cameraOffsetTransform.getTranslation(), new Rotation2d());
-                //     // camToTargetTrans = camToTargetTrans.plus(cameraOffsetTransform3d);
-                //     // Optional<Pose3d> tagPose =
-                //     // aprilTagFieldLayout.getTagPose(bestTarget.getFiducialId());
-                //     // if (tagPose.isPresent()) {
-                //     // Pose2d pose = tagPose.get().transformBy(camToTargetTrans).toPose2d();
-                //     // System.out.println("single vision mesaurement from tag " +
-                //     // bestTarget.getFiducialId() + ": " + pose.toString());
-                //     // drivebaseSubsystem.addVisionMeasurement(pose, imageCaptureTime);
-                //     // }
-                //     // }
+                //                     // drivebaseSubsystem.addVisionMeasurement(
+                //                     //     estPose, est.timestampSeconds, estStdDevs);
+                //                 }
+                //             });
                 // }
             }
         };
