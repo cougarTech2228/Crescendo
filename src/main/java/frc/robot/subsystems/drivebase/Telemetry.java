@@ -31,7 +31,6 @@ public class Telemetry {
     public void telemeterize(SwerveDriveState state) {
         /* Telemeterize the pose */
         Pose2d pose = state.Pose;
-        Logger.recordOutput("Pose/Robot", pose);
 
         /* Telemeterize the robot's general speeds */
         double currentTime = Utils.getCurrentTimeSeconds();
@@ -42,6 +41,7 @@ public class Telemetry {
 
         Translation2d velocities = distanceDiff.div(diffTime);
 
+        Logger.recordOutput("Telemetry/Pose", pose);
         Logger.recordOutput("Telemetry/Speed", velocities.getNorm());
         Logger.recordOutput("Telemetry/VelocityX", velocities.getX());
         Logger.recordOutput("Telemetry/VelocityY", velocities.getY());

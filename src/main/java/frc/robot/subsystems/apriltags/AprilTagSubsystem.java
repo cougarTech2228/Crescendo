@@ -1,6 +1,8 @@
 package frc.robot.subsystems.apriltags;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.littletonrobotics.junction.Logger;
@@ -11,6 +13,8 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -45,16 +49,16 @@ public class AprilTagSubsystem extends SubsystemBase {
     public AprilTagFieldLayout aprilTagFieldLayout;
 
     Transform3d robotToRearCameraTransform = new Transform3d(
-        -0.4, // x
-        -0.07, // y
-        0.2286, // z
-        new Rotation3d(0,Math.toRadians(-34),Math.toRadians(179)));
+            -0.4, // x
+            -0.07, // y
+            0.2286, // z
+            new Rotation3d(0, Math.toRadians(-34), Math.toRadians(179)));
 
     Transform3d robotToSideCameraTransform = new Transform3d(
-        0.06, // x
-        -0.55, // y
-        0.2286, // z
-        new Rotation3d(0,Math.toRadians(-29),Math.toRadians(-90)));
+            0.06, // x
+            -0.55, // y
+            0.2286, // z
+            new Rotation3d(0, Math.toRadians(-29), Math.toRadians(-90)));
 
     private static final int RED_AMP_TAG_ID = 5;
     private static final int BLUE_AMP_TAG_ID = 6;
@@ -62,10 +66,8 @@ public class AprilTagSubsystem extends SubsystemBase {
     Transform2d AMP_TO_CAMERA_TRANSFORM = new Transform2d(0.64, -0.127, new Rotation2d(0));
 
     // The standard deviations of our vision estimated poses, which affect correction rate
-    // (Fake values. Experiment and determine estimation noise on an actual robot.)
     public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(1, 1, Math.toRadians(5));
     public static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.3, 0.3, Math.toRadians(3));
-    private double lastEstTimestamp = 0;
 
     private static AprilTagSubsystem mInstance = null;
 
@@ -87,17 +89,14 @@ public class AprilTagSubsystem extends SubsystemBase {
             System.out.println("Failed to load april tag layout");
         }
 
-
-        rearCameraPhotonEstimator =
-                new PhotonPoseEstimator(
-                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rearCamera, robotToRearCameraTransform);
+        rearCameraPhotonEstimator = new PhotonPoseEstimator(
+                aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rearCamera, robotToRearCameraTransform);
         rearCameraPhotonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
-        sideCameraPhotonEstimator =
-                new PhotonPoseEstimator(
-                        aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightSideCamera, robotToSideCameraTransform);
+        sideCameraPhotonEstimator = new PhotonPoseEstimator(
+                aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, rightSideCamera,
+                robotToSideCameraTransform);
         sideCameraPhotonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-
 
         // ----- Simulation
         if (Robot.isSimulation()) {
@@ -121,72 +120,75 @@ public class AprilTagSubsystem extends SubsystemBase {
             cameraSim.enableDrawWireframe(true);
         }
 
-        processingThread.start();
     }
 
-    // public boolean seesAprilTag() {
-    //     return result.hasTargets();
-    // }
-
-    // private boolean isSaneMeasurement(PNPResult estimatedPose) {
-    //     // if (estimatedPose.bestReprojErr > reprojectionErrorThresholdLow &&
-    //     // estimatedPose.bestReprojErr < reprojectionErrorThresholdHigh ) {
-    //     // return (estimatedPose.best.getX() < 4.0) || (estimatedPose.best.getX() > 10);
-    //     // }
-    //     // return false;
-    //     return (estimatedPose.best.getX() < 4.0) || (estimatedPose.best.getX() > 12);
-    // }
-
-    static private double lastRear2TagReading = 0;
-    Thread processingThread = new Thread("AprilTag Thread") {
-        @Override
-        public void run() {
-            System.out.println("AprilTag Processing Thread started");
-            
-            while (true) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                var rearVisionEst = getEstimatedGlobalPose(rearCameraPhotonEstimator, rearCamera);
-                rearVisionEst.ifPresent(
-                        est -> {
-                            Pose2d estPose = est.estimatedPose.toPose2d();
-                            // Logger.recordOutput("Pose/Vision/Rear", estPose);
-
-                            // Change our trust in the measurement based on the tags we can see
-                            var estStdDevs = getEstimationStdDevs(estPose, rearCameraPhotonEstimator);
-
-                            if (est.targetsUsed.size() >= 2) {
-                                lastRear2TagReading = est.timestampSeconds;
-                            }
-        
-                            drivebaseSubsystem.addVisionMeasurement(
-                                    estPose, est.timestampSeconds, estStdDevs);
-                        });
-
-                // if (rearVisionEst.isEmpty() || (rearVisionEst.isPresent() && rearVisionEst.get().targetsUsed.size() < 2 )) {
-                //     var sideVisionEst = getEstimatedGlobalPose(sideCameraPhotonEstimator, rightSideCamera);
-                //     sideVisionEst.ifPresent(
-                //             est -> {
-                //                 if (est.timestampSeconds - lastRear2TagReading > 0.25) {
-                //                     Pose2d estPose = est.estimatedPose.toPose2d();
-                //                     // Logger.recordOutput("Pose/Vision/Side", estPose);
-                //                     // Change our trust in the measurement based on the tags we can see
-                //                     // var estStdDevs = getEstimationStdDevs(estPose, sideCameraPhotonEstimator);
-                
-                //                     // drivebaseSubsystem.addVisionMeasurement(
-                //                     //     estPose, est.timestampSeconds, estStdDevs);
-                //                 }
-                //             });
-                // }
-            }
-        };
-    };
+    private double lastEstTimestamp = 0;
 
     @Override
     public void periodic() {
+
+        boolean connected = rearCamera.isConnected();
+        Logger.recordOutput("Vision/Rear/Connected", connected);
+        if (!connected)
+            return;
+
+        PhotonPipelineResult pipelineResult = rearCamera.getLatestResult();
+        boolean hasTargets = pipelineResult.hasTargets();
+        Logger.recordOutput("Vision/Rear/HasTargets", hasTargets);
+        if (!hasTargets)
+            return;
+
+        List<PhotonTrackedTarget> badTargets = new ArrayList<>();
+        for (PhotonTrackedTarget target : pipelineResult.targets) {
+            if (target.getPoseAmbiguity() > 0.5) {
+                badTargets.add(target);
+            }
+        }
+
+        pipelineResult.targets.removeAll(badTargets);
+        Logger.recordOutput("Vision/Rear/badTargets", badTargets.size());
+
+        Optional<EstimatedRobotPose> rearVisionEst = rearCameraPhotonEstimator.update(pipelineResult);
+
+        if (Robot.isSimulation()) {
+            double latestTimestamp = rearCamera.getLatestResult().getTimestampSeconds();
+            boolean newResult = Math.abs(latestTimestamp - lastEstTimestamp) > 1e-5;
+            rearVisionEst.ifPresentOrElse(
+                    est -> getSimDebugField()
+                            .getObject("VisionEstimation")
+                            .setPose(est.estimatedPose.toPose2d()),
+                    () -> {
+                        if (newResult)
+                            getSimDebugField().getObject("VisionEstimation").setPoses();
+                    });
+            if (newResult)
+                lastEstTimestamp = latestTimestamp;
+        }
+
+        boolean posePresent = rearVisionEst.isPresent();
+        Logger.recordOutput("Vision/Rear/HasPose", posePresent);
+        if (!posePresent)
+            return;
+
+        EstimatedRobotPose estimatedPose = rearVisionEst.get();
+        var est2dPose = estimatedPose.estimatedPose.toPose2d();
+
+        // *** This line crashes!!! ***
+        // Logger.recordOutput("Vision/Rear/Pose", est2dPose);
+        Logger.recordOutput("Vision/Rear/Pose", new double[] {
+                est2dPose.getX(),
+                est2dPose.getY(),
+                est2dPose.getRotation().getRadians()
+        });
+
+        Logger.recordOutput("Vision/Rear/Timestamp", estimatedPose.timestampSeconds);
+        Logger.recordOutput("Vision/Rear/Targets", estimatedPose.targetsUsed.size());
+        Logger.recordOutput("Vision/Rear/Strategy", estimatedPose.strategy);
+
+        // Change our trust in the measurement based on the tags we can see
+        var estStdDevs = getEstimationStdDevs(est2dPose, rearCameraPhotonEstimator);
+
+        drivebaseSubsystem.addVisionMeasurement(est2dPose, estimatedPose.timestampSeconds, estStdDevs);
     }
 
     @Override
@@ -220,32 +222,10 @@ public class AprilTagSubsystem extends SubsystemBase {
     }
 
     /**
-     * The latest estimated robot pose on the field from vision data. This may be empty. This should
-     * only be called once per loop.
-     *
-     * @return An {@link EstimatedRobotPose} with an estimated pose, estimate timestamp, and targets
-     *     used for estimation.
-     */
-    public Optional<EstimatedRobotPose> getEstimatedGlobalPose(PhotonPoseEstimator estimator, PhotonCamera camera) {
-        var visionEst = estimator.update();
-        double latestTimestamp = camera.getLatestResult().getTimestampSeconds();
-        boolean newResult = Math.abs(latestTimestamp - lastEstTimestamp) > 1e-5;
-        if (Robot.isSimulation()) {
-            visionEst.ifPresentOrElse(
-                    est -> getSimDebugField()
-                                .getObject("VisionEstimation")
-                                .setPose(est.estimatedPose.toPose2d()),
-                    () -> {
-                        if (newResult) getSimDebugField().getObject("VisionEstimation").setPoses();
-                    });
-        }
-        if (newResult) lastEstTimestamp = latestTimestamp;
-        return visionEst;
-    }
-
-    /**
-     * The standard deviations of the estimated pose from {@link #getEstimatedRearGlobalPose()}, for use
-     * with {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator SwerveDrivePoseEstimator}.
+     * The standard deviations of the estimated pose from
+     * {@link #getEstimatedRearGlobalPose()}, for use
+     * with {@link edu.wpi.first.math.estimator.SwerveDrivePoseEstimator
+     * SwerveDrivePoseEstimator}.
      * This should only be used when there are targets visible.
      *
      * @param estimatedPose The estimated pose to guess standard deviations for.
@@ -257,25 +237,30 @@ public class AprilTagSubsystem extends SubsystemBase {
         double avgDist = 0;
         for (var tgt : targets) {
             var tagPose = estimator.getFieldTags().getTagPose(tgt.getFiducialId());
-            if (tagPose.isEmpty()) continue;
+            if (tagPose.isEmpty())
+                continue;
             numTags++;
             avgDist += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
         }
-        if (numTags == 0) return estStdDevs;
+        if (numTags == 0)
+            return estStdDevs;
         avgDist /= numTags;
         // Decrease std devs if multiple targets are visible
-        if (numTags > 1) estStdDevs = kMultiTagStdDevs;
+        if (numTags > 1)
+            estStdDevs = kMultiTagStdDevs;
         // Increase std devs based on (average) distance
         if (numTags == 1 && avgDist > 4)
             estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-        else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
+        else
+            estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
 
         return estStdDevs;
     }
 
     /** A Field2d for visualizing our robot and objects on the field. */
     public Field2d getSimDebugField() {
-        if (!Robot.isSimulation()) return null;
+        if (!Robot.isSimulation())
+            return null;
         return visionSim.getDebugField();
     }
 }
