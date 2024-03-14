@@ -19,7 +19,7 @@ public class ShooterAngleIOHW implements ShooterAngleIO {
         inputs.currentAmps = mLinearActuatorMotor.getStatorCurrent();
         inputs.currentAngle = mShooterAngleEncoder.getAbsolutePosition() * 1000;
 
-        inputs.isShooterAtTop = (inputs.currentAngle < 374);
+        inputs.isShooterAtTop = (inputs.currentAngle < ShooterAngleSubsystem.SHOOTER_AT_TOP);
     }
 
     @Override

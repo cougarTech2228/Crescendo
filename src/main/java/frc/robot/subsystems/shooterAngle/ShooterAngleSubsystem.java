@@ -24,18 +24,23 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private static final double kMotorVoltageLimit = 1;
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double SHOOTER_ELEVATOR_LIMIT = 396;
-    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 391;
-    private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375;
+    private final static double OFFSET = 0;
+    private final static double SLOW_AREA = 385 + OFFSET;
+
+    public final static double SHOOTER_AT_TOP = 374 + OFFSET;
+
+    private final static double SHOOTER_ELEVATOR_LIMIT = 396 + OFFSET;
+    private final static double SHOOT_SPEAKER_SIDE_ANGLE = 391 + OFFSET;
+    private final static double SHOOT_SPEAKER_FRONT_ANGLE = 375 + OFFSET;
 
     /** angle where shooter is able to shoot at the amp */
-    private final static double SHOOT_AMP_ANGLE = 378;
+    private final static double SHOOT_AMP_ANGLE = 378 + OFFSET;
 
     /** angle where shooter is positioned so we can go under the chain */
-    private final static double UNDER_CHAIN_ANGLE = 411;
+    private final static double UNDER_CHAIN_ANGLE = 411 + OFFSET;
 
     /** angle where shooter is in the correct location to load from source */
-    private final static double LOAD_SOURCE_HEIGHT = 370;
+    private final static double LOAD_SOURCE_HEIGHT = 370 + OFFSET;
 
     private static final double kP = 0.1;
     private static final double kI = 0.1;
@@ -177,7 +182,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         System.out.println("called raise shooter");
         disable();
         if(!inputs.isShooterAtTop){
-            if (getMeasurement() < 390) {
+            if (getMeasurement() < SLOW_AREA) {
                 System.out.println ("Slow up");
                 mIO.setOutputPercentage( SPEED_UP / 2);
             } else {
@@ -270,9 +275,9 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
         }
 
         System.out.println("setting shooter angle: " + goal);
-        this.m_controller.reset();
-        pidController.setSetpoint(goal);
+        // this.m_controller.reset();
         enable();
+        pidController.setSetpoint(goal);
     }
 
     @Override
