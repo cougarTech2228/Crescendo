@@ -24,7 +24,7 @@ public class ShooterAngleSubsystem extends PIDSubsystem {
     private static final double kMotorVoltageLimit = 1;
 
     /** angle where shooter is able to shoot at the speaker */
-    private final static double OFFSET = 0;
+    private final static double OFFSET = 159;
     private final static double SLOW_AREA = 385 + OFFSET;
 
     public final static double SHOOTER_AT_TOP = 374 + OFFSET;
