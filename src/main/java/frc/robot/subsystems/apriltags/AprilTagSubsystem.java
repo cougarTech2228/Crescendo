@@ -125,6 +125,11 @@ public class AprilTagSubsystem extends SubsystemBase {
 
     private double lastEstTimestamp = 0;
 
+    public Pose2d getTargetPosition2d(int id) {
+        Optional<Pose3d> tagPose = aprilTagFieldLayout.getTagPose(id);
+        return tagPose.get().toPose2d();
+    }
+    
     @Override
     public void periodic() {
 

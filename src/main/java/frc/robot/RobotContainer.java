@@ -5,6 +5,7 @@
 package frc.robot;
 
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
+import com.ctre.phoenix6.mechanisms.swerve.utility.PhoenixPIDController;
 
 import java.util.Map;
 import java.util.function.BooleanSupplier;
@@ -16,6 +17,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
@@ -66,6 +68,15 @@ public class RobotContainer {
       .withDeadband(MaxSpeed * 0.03).withRotationalDeadband(MaxAngularRate * 0.03) // Add a 3% deadband
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // I want field-centric
                                                                // driving in open loop
+
+  private boolean aimSpeaker = false;
+  private PhoenixPIDController m_thetaController;
+
+  private final SwerveRequest.FieldCentricFacingAngle driveAngle = new SwerveRequest.FieldCentricFacingAngle()
+  .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+      .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // I want field-centric
+                                                              // driving in open loop
+
   // private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
   private final SwerveRequest.RobotCentric forwardStraight = new SwerveRequest.RobotCentric()
       .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
@@ -90,31 +101,35 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    drivetrain.setDefaultCommand( // Drivetrain will execute this command periodically
-        new ConditionalCommand(
-            (drivetrain.applyRequest(() -> forwardStraight.withVelocityX(buttonBoardSubsystem.getJoystickX() * MaxSpeed)
-                .withVelocityY(buttonBoardSubsystem.getJoystickY() * MaxSpeed))),
-            (drivetrain.applyRequest(() -> drive.withVelocityX(invertForColor() * joystick.getLeftY() * MaxSpeed) // Drive
-                                                                                                                  // forward
-                                                                                                                  // with
-                // negative Y (forward)
-                .withVelocityY(invertForColor() * joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                .withRotationalRate(-joystick.getRightX() * MaxAngularRate)) // Drive counterclockwise with negative X
-                                                                             // (left)
-                .ignoringDisable(true)),
-            new BooleanSupplier() {
-              @Override
-              public boolean getAsBoolean() {
-                return buttonBoardSubsystem.isDriveOperationMode() &&
-                    ((buttonBoardSubsystem.getJoystickX() < -0.1 || buttonBoardSubsystem.getJoystickX() > 0.1) ||
-                        (buttonBoardSubsystem.getJoystickY() < -0.1 || buttonBoardSubsystem.getJoystickY() > 0.1));
-              };
-            }));
+    drivetrain.setDefaultCommand(
+        (drivetrain.applyRequest(() -> {
+          if (!joystick.rightBumper().getAsBoolean()) {
+            return drive.withVelocityX(invertForColor() * joystick.getLeftY() * MaxSpeed) 
+                  .withVelocityY(invertForColor() * joystick.getLeftX() * MaxSpeed) 
+                  .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+          } else {
+            Pose2d target = aprilTagSubsystem.getTargetPosition2d(7);
+            Pose2d currentPose = drivetrain.getCurrentPose();
+            
+            Translation2d errorToTarget = currentPose.getTranslation().minus(target.getTranslation());
+            // Logger.recordOutput("ErrorToTarget/", errorToTarget);
+            // Logger.recordOutput("TargetPosition/", target);
+            return driveAngle
+              .withVelocityX(invertForColor() * joystick.getLeftY() * MaxSpeed) // Drive forward with
+                                                                                // negative Y (forward)
+              .withVelocityY(invertForColor() * joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+              .withTargetDirection(errorToTarget.getAngle()); // Drive counterclockwise with negative X (left)
+          }
+        }
+        ) 
+      .ignoringDisable(true))
+    );
 
     // reset the field-centric heading on left bumper press
     joystick.leftBumper().onTrue(drivetrain.runOnce(() -> {
       drivetrain.seedFieldRelative(new Pose2d());
     }));
+
     joystick.a().onTrue(new InstantCommand(() -> {
       shooter.forceLoaded();
     }));
@@ -130,6 +145,10 @@ public class RobotContainer {
   public RobotContainer() {
     NamedCommands.registerCommand("shootSpeakerFront", shootFrontCommand);
     NamedCommands.registerCommand("shootSpeakerSide", shootSideCommand);
+
+    m_thetaController = new PhoenixPIDController(15.0, 0.0, 0.0);
+    m_thetaController.enableContinuousInput(-Math.PI, Math.PI);
+    driveAngle.HeadingController = m_thetaController;
 
     configureBindings();
     buttonBoardSubsystem.configureButtonBindings();
