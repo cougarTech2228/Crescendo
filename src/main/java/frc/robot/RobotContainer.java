@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.mechanisms.swerve.SwerveRequest;
 import com.ctre.phoenix6.mechanisms.swerve.utility.PhoenixPIDController;
 
+import java.sql.Driver;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 
@@ -20,6 +21,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -108,9 +110,14 @@ public class RobotContainer {
                   .withVelocityY(invertForColor() * joystick.getLeftX() * MaxSpeed) 
                   .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
           } else {
-            Pose2d target = aprilTagSubsystem.getTargetPosition2d(7);
+            Pose2d target;
             Pose2d currentPose = drivetrain.getCurrentPose();
-            
+            if (DriverStation.getAlliance().get() == Alliance.Red) {
+              target = aprilTagSubsystem.getTargetPosition2d(4);
+            } else {
+              target = aprilTagSubsystem.getTargetPosition2d(7);
+            }
+
             Translation2d errorToTarget = currentPose.getTranslation().minus(target.getTranslation());
             // Logger.recordOutput("ErrorToTarget/", errorToTarget);
             // Logger.recordOutput("TargetPosition/", target);
