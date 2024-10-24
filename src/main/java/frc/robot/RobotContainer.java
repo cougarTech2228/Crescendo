@@ -105,7 +105,7 @@ public class RobotContainer {
   private void configureBindings() {
     drivetrain.setDefaultCommand(
         (drivetrain.applyRequest(() -> {
-          if (!joystick.rightBumper().getAsBoolean()) {
+          if (!joystick.getHID().getRightBumper()) {
             return drive.withVelocityX(invertForColor() * joystick.getLeftY() * MaxSpeed) 
                   .withVelocityY(invertForColor() * joystick.getLeftX() * MaxSpeed) 
                   .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
